@@ -97,6 +97,7 @@ jobs:
         run: |
           notes="Drop \`MissionHoldSkipper.asi\` and \`MissionHoldSkipper.ini\` next to \`gta_sa.exe\`."
           notes="$notes Needs GTA San Andreas v1.0 US and an ASI loader."
+          notes="$notes Full steps, including how to verify the log, are in \`INSTALLATION.txt\` inside the zip."
           flags=(--title "$TAG" --notes "$notes" --target "$GITHUB_SHA")
           if [ "$PRERELEASE" = "true" ]; then
             flags+=(--prerelease)
