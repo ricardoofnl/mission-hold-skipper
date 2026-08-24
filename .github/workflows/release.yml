@@ -67,7 +67,10 @@ jobs:
         run: conan install . -pr:h=./conanprofile-windows.txt -pr:b=default --build=missing -of build
 
       - name: configure
-        run: cmake --preset conan-release -DMHS_BUILD_TESTS=ON -DMHS_VERSION=${{ steps.version.outputs.version }}
+        shell: bash
+        env:
+          MHS_VERSION: ${{ steps.version.outputs.version }}
+        run: cmake --preset conan-release -DMHS_BUILD_TESTS=ON "-DMHS_VERSION=${MHS_VERSION}"
 
       - name: build
         run: cmake --build --preset conan-release
