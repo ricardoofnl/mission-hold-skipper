@@ -7,11 +7,11 @@ early and nothing is skipped.
 
 ## Screenshot
 
-![Hold to skip prompt in the bottom right corner](docs/screenshot.png)
+![The prompt filling up during a mission cutscene](docs/screenshot.png)
 
-The image is not in the repository yet. Take a screenshot while holding ENTER
-during a mission cutscene and save it as `docs/screenshot.png`, and this section
-will show it.
+Mid hold during the Drive-Thru cutscene, at 1920x1080. The white arc has swept
+about a third of the way around the black circle, and the label sits to its left
+so it stays clear of the subtitles.
 
 ## Requirements
 
