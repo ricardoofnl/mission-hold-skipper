@@ -1,0 +1,52 @@
+name: build
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-2022
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: install conan and ninja
+        run: pip install conan ninja
+
+      - name: detect the build profile
+        run: conan profile detect --force
+
+      # the .asi is 32 bit, so cl and the libs have to come from the x86 toolset
+      - uses: ilammy/msvc-dev-cmd@v1
+        with:
+          arch: x86
+
+      - name: conan install
+        run: conan install . -pr:h=./conanprofile-windows.txt -pr:b=default --build=missing -of build
+
+      - name: configure
+        run: cmake --preset conan-release -DMHS_BUILD_TESTS=ON
+
+      - name: build
+        run: cmake --build --preset conan-release
+
+      - name: test
+        run: ctest --test-dir build/build/Release --output-on-failure
+
+      - name: check the binary shape
+        shell: bash
+        run: |
+          dumpbin //headers build/build/Release/MissionHoldSkipper.asi | grep -E "machine|DLL$"
+          dumpbin //dependents build/build/Release/MissionHoldSkipper.asi
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: MissionHoldSkipper
+          path: |
+            build/build/Release/MissionHoldSkipper.asi
+            MissionHoldSkipper.ini
+          if-no-files-found: error

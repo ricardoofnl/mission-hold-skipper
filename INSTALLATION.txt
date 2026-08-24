@@ -1,0 +1,107 @@
+Mission Hold Skipper, installation guide
+
+
+What this is
+
+An .asi plugin for GTA San Andreas. It replaces the instant mission scene skip
+with a hold to skip action: hold ENTER (or click the left mouse button) and a
+small black circle in the bottom right corner fills with white. Release early
+and nothing is skipped.
+
+
+Before you start
+
+1. You need GTA San Andreas v1.0 US. Check the md5 of your gta_sa.exe, it has
+   to be 170b3a9108687b26da2d8901c6948a18 (14383616 bytes).
+
+   On Windows, in a terminal opened in your game folder:
+       certutil -hashfile gta_sa.exe MD5
+
+   Downgraders exist if you are on 1.01, 2.00, or a Steam or Rockstar Launcher
+   copy. The plugin refuses to touch any other version. It will not crash your
+   game, it simply does nothing.
+
+2. You need an ASI loader, either Silent's ASI Loader or Ultimate ASI Loader.
+   If you already run other .asi mods, you have one.
+
+
+Installing
+
+1. Open the folder that contains gta_sa.exe.
+
+2. Copy both of these files into that folder:
+       MissionHoldSkipper.asi
+       MissionHoldSkipper.ini
+
+   If your setup uses a "scripts" folder for .asi mods, put both files in there
+   instead. What matters is that the .asi and the .ini end up in the same
+   folder, otherwise the plugin runs with its built in defaults.
+
+3. Start the game and begin any mission that has a cutscene.
+
+4. Hold ENTER. The circle appears and fills up over 1.2 seconds, then the scene
+   is skipped. A single tap does nothing on purpose.
+
+
+Checking that it loaded
+
+A log file is written next to the .asi, named MissionHoldSkipper.log. After
+starting the game once, open it. A healthy log looks like this:
+
+    [info] mission-hold-skipper 0.2.0 loading
+    [info] version check ok, screen 1920x1080
+    [info] hooks installed, hold 1200 ms to skip
+
+If instead you see a line about a byte mismatch, your gta_sa.exe is not the
+supported v1.0 US build, and the plugin stayed inactive on purpose.
+
+If there is no log file at all, the ASI loader never loaded the plugin. Confirm
+the loader is installed and that the .asi sits in the folder the loader scans.
+
+
+Changing the settings
+
+Open MissionHoldSkipper.ini in any text editor. The values are read once when
+the game starts, so restart the game after editing. The most useful ones:
+
+    HoldMs=1200            how long the key has to be held
+    Keys=ENTER,NUMPAD_ENTER,MOUSE_LEFT
+    Label=HOLD ENTER TO SKIP
+    RingRadius=13          size of the circle
+    RingX=-1               -1 keeps it in the bottom right corner
+    ShowHintBeforeHold=0   1 shows the prompt before you press anything
+    LogLevel=info          set to debug for a noisier log
+
+Every key is documented in README.md.
+
+
+Uninstalling
+
+Delete MissionHoldSkipper.asi, MissionHoldSkipper.ini, and
+MissionHoldSkipper.log from the game folder. Nothing else is modified. The
+plugin only patches memory while the game runs and never writes to gta_sa.exe.
+
+
+Troubleshooting
+
+The prompt never appears.
+   The scene has to be skippable in the first place. Vanilla San Andreas only
+   allows skipping during mission cutscenes and scripted scenes, not during
+   normal gameplay. Check the log for "hooks installed".
+
+The prompt appears but the scene never skips.
+   Make sure you keep the key held for the whole duration. Lower HoldMs if
+   1.2 seconds feels too long.
+
+The circle sits in the wrong place.
+   Set RingX and RingY in the ini. They are in 640x448 units and get scaled to
+   your resolution. Use -1 for the default corner placement.
+
+The game crashes on startup.
+   Remove the .asi and confirm the game starts. If it does, report the issue
+   with your MissionHoldSkipper.log and the md5 of your gta_sa.exe.
+
+
+License
+
+MIT, see LICENSE.

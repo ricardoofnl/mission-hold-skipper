@@ -1,0 +1,11 @@
+build/
+build-tests/
+ConanPresets.json
+CMakeUserPresets.json
+tmp/
+*.i64
+*.id0
+*.id1
+*.id2
+*.nam
+*.til
