@@ -9,7 +9,7 @@ early and nothing is skipped.
 
 ![The prompt filling up during a mission cutscene](docs/screenshot.png)
 
-Mid hold during the Drive-Thru cutscene, at 1920x1080. The white arc has swept
+Mid hold during the Drive-By cutscene, at 1920x1080. The white arc has swept
 about a third of the way around the black circle, and the label sits to its left
 so it stays clear of the subtitles.
 
