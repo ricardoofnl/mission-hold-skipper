@@ -3,9 +3,9 @@
 #include <cstdint>
 #include <string>
 
+#include "game/bindings.hpp"
 #include "pad_button.hpp"
 #include "prompt_device.hpp"
-#include "sa/game.hpp"
 
 namespace mhs {
 
@@ -45,9 +45,9 @@ struct Config {
     float labelScaleX{0.28f};
     float labelScaleY{0.7f};
 
-    sa::CRGBA colorBackdrop{0, 0, 0, 200};
-    sa::CRGBA colorTrack{255, 255, 255, 0};
-    sa::CRGBA colorProgress{255, 255, 255, 255};
+    game::CRGBA colorBackdrop{0, 0, 0, 200};
+    game::CRGBA colorTrack{255, 255, 255, 0};
+    game::CRGBA colorProgress{255, 255, 255, 255};
 
     std::string logLevel{"info"};
 };

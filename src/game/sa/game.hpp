@@ -3,7 +3,7 @@
 #include <cstddef>
 #include <cstdint>
 
-#include "sa/addresses.hpp"
+#include "game/sa/addresses.hpp"
 
 namespace mhs::sa {
 

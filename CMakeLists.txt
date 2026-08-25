@@ -20,6 +20,7 @@ if(WIN32)
         src/config.cpp
         src/hold_skip.cpp
         src/ring.cpp
+        src/game/sa/backend.cpp
     )
 
     target_include_directories(MissionHoldSkipper PRIVATE src)

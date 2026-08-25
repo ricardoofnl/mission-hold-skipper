@@ -35,6 +35,18 @@ struct GeneralSettings {
 };
 #pragma pack(pop)
 
+inline constexpr const char* kModules[]{"GInputSA.asi"};
+
+// which GInput build is loaded, null when none is
+inline const char* LoadedModuleName() {
+    for (const char* name : kModules) {
+        if (GetModuleHandleA(name)) {
+            return name;
+        }
+    }
+    return nullptr;
+}
+
 // never call this from DllMain, GInput may not be initialised yet
 inline IPad* Pad() {
     static IPad* cached  = nullptr;
@@ -44,7 +56,11 @@ inline IPad* Pad() {
     }
     resolved = true;
 
-    HMODULE module = GetModuleHandleA("GInputSA.asi");
+    const char* name = LoadedModuleName();
+    if (!name) {
+        return nullptr;
+    }
+    HMODULE module = GetModuleHandleA(name);
     if (!module) {
         return nullptr;
     }
