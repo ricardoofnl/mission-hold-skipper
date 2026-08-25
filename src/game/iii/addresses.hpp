@@ -15,7 +15,8 @@ constexpr ea CCutsceneMgr_ms_running            = 0x95CCF5;
 constexpr ea CCutsceneMgr_ms_cutsceneProcessing = 0x95CD9F;
 constexpr ea CCutsceneMgr_ms_cutsceneLoadStatus = 0x95CB40;
 
-constexpr ea CHud_Draw = 0x5052A0;
+constexpr ea CHud_Draw          = 0x5052A0;
+constexpr ea CHud_DrawAfterFade = 0x509030;
 
 // III has no standalone Draw2DPolygon, the ring goes through these instead
 constexpr ea CSprite2d_SetVertices = 0x51F070;

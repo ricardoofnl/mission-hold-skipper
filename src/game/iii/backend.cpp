@@ -21,6 +21,7 @@ namespace {
 
 std::uintptr_t g_finishCall{0};
 std::uintptr_t g_hudDrawCall{0};
+std::uintptr_t g_hudDrawOriginal{0};
 bool           g_skipOffered{false};
 
 // vanilla reached its own skip check, so the scene is skippable and a skip key
@@ -30,7 +31,7 @@ void __cdecl HookedFinishCutscene() {
 }
 
 void __cdecl HookedCHudDraw() {
-    CHudDraw();
+    fn<void(__cdecl*)()>(g_hudDrawOriginal)();
 
     static bool logged = false;
     if (!logged) {
@@ -46,16 +47,44 @@ void __cdecl HookedCHudDraw() {
     hold_skip::Draw();
 }
 
-bool FindCall(const char* what, std::uintptr_t from, std::size_t size,
-              std::uintptr_t callee, std::uintptr_t& out) {
+std::size_t FindCall(std::uintptr_t from, std::size_t size, std::uintptr_t callee, std::uintptr_t& out) {
     const auto found = callscan::FindCalls(reinterpret_cast<const std::uint8_t*>(from), size, from, callee);
-    if (found.count != 1) {
-        MHS_LOG_ERROR("found %u calls to %s, expected exactly one", static_cast<unsigned>(found.count), what);
-        return false;
+    if (found.count == 1) {
+        out = found.at;
     }
-    out = found.at;
-    MHS_LOG_INFO("call to %s sits at 0x%08X", what, out);
-    return true;
+    return found.count;
+}
+
+void LogBytes(const char* what, std::uintptr_t at) {
+    const auto* p = reinterpret_cast<const std::uint8_t*>(at);
+    MHS_LOG_ERROR("%s at 0x%08X starts with %02X %02X %02X %02X %02X", what, at, p[0], p[1], p[2], p[3], p[4]);
+}
+
+// the prompt can go through either hud draw, whichever call site is still free
+bool FindDrawCall(std::uintptr_t code, std::size_t codeSize) {
+    struct Candidate {
+        const char*    what;
+        std::uintptr_t callee;
+    };
+    const Candidate candidates[]{
+        {"CHud::Draw", addr::CHud_Draw},
+        {"CHud::DrawAfterFade", addr::CHud_DrawAfterFade},
+    };
+
+    for (const auto& candidate : candidates) {
+        const auto count = FindCall(code, codeSize, candidate.callee, g_hudDrawCall);
+        if (count == 1) {
+            g_hudDrawOriginal = candidate.callee;
+            MHS_LOG_INFO("call to %s sits at 0x%08X", candidate.what, g_hudDrawCall);
+            return true;
+        }
+        MHS_LOG_WARN("found %u calls to %s, looking for another draw point",
+                     static_cast<unsigned>(count), candidate.what);
+    }
+    for (const auto& candidate : candidates) {
+        LogBytes(candidate.what, candidate.callee);
+    }
+    return false;
 }
 
 bool CallPointsAt(std::uintptr_t at, const void* target) {
@@ -71,12 +100,17 @@ bool CallPointsAt(std::uintptr_t at, const void* target) {
 } // namespace
 
 // without gta3.exe byte signatures the table is checked structurally instead,
-// both call sites have to be exactly where this table says they are
+// the call sites have to be exactly where this table says they are
 bool VersionMatches() {
     const auto base = reinterpret_cast<std::uintptr_t>(GetModuleHandleA(nullptr));
     if (base != 0x400000) {
         MHS_LOG_ERROR("unexpected image base 0x%08X, expected 0x00400000", base);
         return false;
+    }
+
+    std::uint32_t imageSize{}, timestamp{};
+    if (codeview::Identity(imageSize, timestamp)) {
+        MHS_LOG_INFO("host image %u bytes, PE timestamp 0x%08X", imageSize, timestamp);
     }
 
     std::uintptr_t code{};
@@ -93,9 +127,14 @@ bool VersionMatches() {
     }
     const auto room = std::min<std::size_t>(0x400, code + codeSize - update);
 
-    return FindCall("CHud::Draw", code, codeSize, addr::CHud_Draw, g_hudDrawCall)
-        && FindCall("CCutsceneMgr::FinishCutscene", update, room, addr::CCutsceneMgr_FinishCutscene,
-                    g_finishCall);
+    if (FindCall(update, room, addr::CCutsceneMgr_FinishCutscene, g_finishCall) != 1) {
+        MHS_LOG_ERROR("no single call to CCutsceneMgr::FinishCutscene inside CCutsceneMgr::Update");
+        LogBytes("CCutsceneMgr::Update", update);
+        return false;
+    }
+    MHS_LOG_INFO("call to CCutsceneMgr::FinishCutscene sits at 0x%08X", g_finishCall);
+
+    return FindDrawCall(code, codeSize);
 }
 
 bool InstallHooks() {
@@ -104,7 +143,7 @@ bool InstallHooks() {
         return false;
     }
     if (!hook::RedirectCall(g_hudDrawCall, &HookedCHudDraw)) {
-        MHS_LOG_ERROR("failed to redirect the CHud::Draw call");
+        MHS_LOG_ERROR("failed to redirect the hud draw call");
         return false;
     }
     // another mod can repoint the same two calls, and the last one to load wins
