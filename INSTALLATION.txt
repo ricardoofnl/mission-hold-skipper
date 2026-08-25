@@ -24,6 +24,12 @@ Before you start
 2. You need an ASI loader, either Silent's ASI Loader or Ultimate ASI Loader.
    If you already run other .asi mods, you have one.
 
+3. Optional, and recommended if you play with a gamepad: install GInputSA from
+       https://cookieplmonster.github.io/mods/gta-sa/ginput/
+   The pad works without it, but the button icon in the middle of the circle is
+   drawn from GInputSA's own textures, so without GInputSA the prompt is text
+   only. See "Using a gamepad" below.
+
 
 Installing
 
@@ -65,14 +71,40 @@ Open MissionHoldSkipper.ini in any text editor. The values are read once when
 the game starts, so restart the game after editing. The most useful ones:
 
     HoldMs=1200            how long the key has to be held
-    Keys=ENTER,NUMPAD_ENTER,MOUSE_LEFT
+    Keys=ENTER,NUMPAD_ENTER,MOUSE_LEFT,PAD_CROSS
     Label=HOLD ENTER TO SKIP
-    RingRadius=13          size of the circle
+    LabelPad=HOLD TO SKIP        shown while you are on a gamepad
+    PromptDevice=auto      auto, keyboard, or pad
+    PadIconMode=auto       auto, off
+    PadIconStyle=auto      auto, ps, xbox
+    RingRadius=18          size of the circle
     RingX=-1               -1 keeps it in the bottom right corner
     ShowHintBeforeHold=0   1 shows the prompt before you press anything
     LogLevel=info          set to debug for a noisier log
 
 Every key is documented in README.md.
+
+
+Using a gamepad
+
+Holding a pad button works just like holding ENTER. Which button is up to you,
+set it in Keys: PAD_CROSS, PAD_CIRCLE, PAD_SQUARE, PAD_TRIANGLE, PAD_L1, PAD_L2,
+PAD_R1 or PAD_R2. This works with a plain DirectInput pad and with GInputSA.
+
+If GInputSA is installed, the button is also drawn as an icon in the middle of
+the circle, with the progress sweeping around it. The icon is taken from
+GInputSA's own textures in your models folder, and it follows GInputSA's
+PlayStationButtons setting. Without GInputSA the prompt stays text only.
+
+So if you play on a pad, installing GInputSA is worth it. Get it from
+    https://cookieplmonster.github.io/mods/gta-sa/ginput/
+put it in the game folder, and the icon shows up by itself. Nothing has to be
+changed in MissionHoldSkipper.ini for that, and the icon style follows whatever
+GInputSA is set to. If you want to force it, use PadIconStyle=ps or
+PadIconStyle=xbox, or PadIconMode=off to keep the prompt text only.
+
+If the prompt shows the wrong device, set PromptDevice=keyboard or
+PromptDevice=pad.
 
 
 Uninstalling

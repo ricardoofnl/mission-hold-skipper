@@ -17,6 +17,10 @@ so it stays clear of the subtitles.
 
 - GTA San Andreas v1.0 US, `gta_sa.exe` with md5 `170b3a9108687b26da2d8901c6948a18`
 - An ASI loader, for example the one that ships with Silent's ASI Loader or Ultimate ASI Loader
+- Optional, recommended if you play on a gamepad:
+  [GInputSA](https://cookieplmonster.github.io/mods/gta-sa/ginput/). The pad
+  works without it, but the button icon inside the ring comes from GInput's own
+  textures, so without GInput the prompt stays text only.
 
 The plugin checks a few known byte patterns in the executable on startup. On any
 other version it logs the mismatch and stays completely inactive instead of
@@ -41,10 +45,23 @@ section. Values are read once at startup.
 
 - `Enabled`: `0` leaves the game completely untouched.
 - `HoldMs`: how long the key has to be held, in milliseconds. Default `1200`.
-- `Keys`: any of `ENTER`, `NUMPAD_ENTER`, `SPACE`, `MOUSE_LEFT`, comma separated.
+- `Keys`: any of `ENTER`, `NUMPAD_ENTER`, `SPACE`, `MOUSE_LEFT`, and any of
+  `PAD_CROSS`, `PAD_CIRCLE`, `PAD_SQUARE`, `PAD_TRIANGLE`, `PAD_L1`, `PAD_L2`,
+  `PAD_R1`, `PAD_R2`, comma separated.
 - `ShowHintBeforeHold`: `1` shows the prompt as soon as a scene can be skipped,
   `0` only shows it while a key is held.
-- `Label`: the text next to the circle. Set it to nothing to hide the text.
+- `Label`: the text next to the circle, used for keyboard and mouse. Set it to
+  nothing to hide the text.
+- `LabelPad`: the text used when a gamepad was the last device touched. The
+  button itself is drawn as an icon, so this does not need to name it. Empty
+  means always use `Label`.
+- `PromptDevice`: `auto`, `keyboard` or `pad`. `auto` follows the last device
+  you touched.
+- `PadIconMode`: `auto` draws the button icon whenever GInput's textures are
+  installed, `off` keeps the prompt text only.
+- `PadIconStyle`: `auto`, `ps` or `xbox`. `auto` follows GInput's own
+  `PlayStationButtons` setting.
+- `PadIconScale`: icon size as a multiple of the ring's inner radius.
 - `FadeInMs`, `FadeOutMs`: show and hide easing in milliseconds.
 - `RingX`, `RingY`: position in 640x448 units. `-1` means the bottom right corner.
 - `RingRadius`, `RingThickness`, `RingSegments`: size and smoothness of the circle.
@@ -53,6 +70,30 @@ section. Values are read once at startup.
   backdrop is the black disc, progress is the white fill sweeping around the rim,
   and the track is the unfilled part of the rim, invisible by default.
 - `LogLevel`: `debug`, `info`, `warn` or `error`.
+
+## Gamepad and GInputSA
+
+Holding a pad button works the same as holding ENTER, and which button that is
+comes from `Keys`. The button state is read from `CControllerState`, where every
+input layer ends up, so a plain DirectInput pad and an XInput pad through
+[GInputSA](https://cookieplmonster.github.io/mods/gta-sa/ginput/) both work
+without a separate code path.
+
+With GInputSA installed the button is also drawn as an icon in the middle of the
+ring, with the progress sweeping around it. That is the reason to install it if
+you play on a pad: grab it from
+[cookieplmonster.github.io](https://cookieplmonster.github.io/mods/gta-sa/ginput/),
+drop it in the game folder, and the icon appears on its own with no extra
+setting to change. The icon comes from GInputSA's own
+`models/x360btns.txd` or `models/ps3btns.txd`, loaded into a private txd slot, so
+nothing in the game's own assets is touched. Without those files the prompt stays
+text only, and the vanilla game never shows a broken glyph.
+
+Device switching uses GInputSA's public modder API when it is present, which
+answers `HasPadInHands()` directly. Without GInputSA it falls back to watching
+the pad state. If it ever guesses wrong, pin it with `PromptDevice=keyboard` or
+`PromptDevice=pad`. The log records the GInput version, which device the prompt
+follows, and which icon texture was loaded.
 
 ## Building
 
