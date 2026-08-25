@@ -161,11 +161,27 @@ void TickOncePerFrame() {
     g_state.SetHoldMs(cfg.holdMs);
 
     const bool available = game::SkipAvailable();
-    g_state.Update(available, KeyDown(), delta);
+    const bool keyDown   = KeyDown();
+
+    static bool lastAvailable = false;
+    if (available != lastAvailable) {
+        lastAvailable = available;
+        MHS_LOG_INFO("the game %s a skip", available ? "offers" : "no longer offers");
+    }
+    if (available) {
+        MHS_LOG_DEBUG("frame %u delta %u progress %.0f%% enter %d numpad %d space %d lmb %d pad %d",
+                      frame, delta, g_state.Progress() * 100.0f,
+                      game::KeyEnterDown() ? 1 : 0, game::KeyNumpadEnterDown() ? 1 : 0,
+                      game::KeySpaceDown() ? 1 : 0, game::MouseLeftDown() ? 1 : 0,
+                      PadButtonDown() ? 1 : 0);
+    }
+
+    g_state.Update(available, keyDown, delta);
 
     // SA's own hook consumes the completion, III and VC need us to do the skip
     if constexpr (game::kSkipIsExplicit) {
         if (g_state.ConsumeCompleted()) {
+            MHS_LOG_INFO("hold complete, skipping the scene");
             game::PerformSkip();
         }
     }
