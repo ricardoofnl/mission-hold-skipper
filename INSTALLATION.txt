@@ -3,18 +3,22 @@ Mission Hold Skipper, installation guide
 
 What this is
 
-An .asi plugin for GTA San Andreas. It replaces the instant mission scene skip
-with a hold to skip action: hold ENTER (or click the left mouse button) and a
-small black circle in the bottom right corner fills with white. Release early
-and nothing is skipped.
+An .asi plugin for GTA San Andreas and GTA III. It replaces the instant mission
+scene skip with a hold to skip action: hold ENTER (or click the left mouse
+button) and a small black circle in the bottom right corner fills with white.
+Release early and nothing is skipped.
+
+There is one file per game. Use MissionHoldSkipper.asi for San Andreas and
+MissionHoldSkipperIII.asi for GTA III. Vice City is not supported yet.
 
 
 Before you start
 
-1. You need GTA San Andreas v1.0 US. Check the md5 of your gta_sa.exe, it has
-   to be 170b3a9108687b26da2d8901c6948a18 (14383616 bytes).
+1. You need GTA San Andreas v1.0 US, or GTA III v1.0.
 
-   On Windows, in a terminal opened in your game folder:
+   For San Andreas, check the md5 of your gta_sa.exe, it has to be
+   170b3a9108687b26da2d8901c6948a18 (14383616 bytes). On Windows, in a terminal
+   opened in your game folder:
        certutil -hashfile gta_sa.exe MD5
 
    Downgraders exist if you are on 1.01, 2.00, or a Steam or Rockstar Launcher
@@ -24,42 +28,50 @@ Before you start
 2. You need an ASI loader, either Silent's ASI Loader or Ultimate ASI Loader.
    If you already run other .asi mods, you have one.
 
-3. Optional, and recommended if you play with a gamepad: install GInputSA from
+3. Optional, and recommended if you play with a gamepad: install GInput for your
+   game from
        https://cookieplmonster.github.io/mods/gta-sa/ginput/
    The pad works without it, but the button icon in the middle of the circle is
-   drawn from GInputSA's own textures, so without GInputSA the prompt is text
-   only. See "Using a gamepad" below.
+   drawn from GInput's own textures, so without GInput the prompt is text only.
+   See "Using a gamepad" below.
 
 
 Installing
 
-1. Open the folder that contains gta_sa.exe.
+1. Open the folder that contains the game exe, gta_sa.exe or gta3.exe.
 
-2. Copy both of these files into that folder:
-       MissionHoldSkipper.asi
-       MissionHoldSkipper.ini
+2. Copy the two files for your game into that folder:
+       San Andreas: MissionHoldSkipper.asi and MissionHoldSkipper.ini
+       GTA III:     MissionHoldSkipperIII.asi and MissionHoldSkipperIII.ini
 
    If your setup uses a "scripts" folder for .asi mods, put both files in there
-   instead. What matters is that the .asi and the .ini end up in the same
-   folder, otherwise the plugin runs with its built in defaults.
+   instead. What matters is that the .asi and the .ini end up in the same folder
+   and keep their names, otherwise the plugin runs with its built in defaults.
 
 3. Start the game and begin any mission that has a cutscene.
 
 4. Hold ENTER. The circle appears and fills up over 1.2 seconds, then the scene
    is skipped. A single tap does nothing on purpose.
 
+   On GTA III the hold starts on the press that vanilla would have skipped with,
+   so if you were already holding ENTER before the cutscene got to its skippable
+   part, release it once and press again.
+
 
 Checking that it loaded
 
-A log file is written next to the .asi, named MissionHoldSkipper.log. After
-starting the game once, open it. A healthy log looks like this:
+A log file is written next to the .asi with the same name, so
+MissionHoldSkipper.log or MissionHoldSkipperIII.log. After starting the game
+once, open it. A healthy log looks like this:
 
-    [info] mission-hold-skipper 0.2.0 loading
+    [info] mission-hold-skipper 0.2.0 loading, built for GTA SA 1.0 US
     [info] version check ok, screen 1920x1080
     [info] hooks installed, hold 1200 ms to skip
 
 If instead you see a line about a byte mismatch, your gta_sa.exe is not the
-supported v1.0 US build, and the plugin stayed inactive on purpose.
+supported v1.0 US build, and the plugin stayed inactive on purpose. On GTA III
+the same job is done by a line about a call it could not find, which means the
+build is not v1.0.
 
 If there is no log file at all, the ASI loader never loaded the plugin. Confirm
 the loader is installed and that the .asi sits in the folder the loader scans.
@@ -67,7 +79,7 @@ the loader is installed and that the .asi sits in the folder the loader scans.
 
 Changing the settings
 
-Open MissionHoldSkipper.ini in any text editor. The values are read once when
+Open the .ini for your game in any text editor. The values are read once when
 the game starts, so restart the game after editing. The most useful ones:
 
     HoldMs=1200            how long the key has to be held
@@ -77,6 +89,7 @@ the game starts, so restart the game after editing. The most useful ones:
     PromptDevice=auto      auto, keyboard, or pad
     PadIconMode=auto       auto, off
     PadIconStyle=auto      auto, ps, xbox
+    FontStyle=-1           -1 keeps the game's own font
     RingRadius=18          size of the circle
     RingX=-1               -1 keeps it in the bottom right corner
     ShowHintBeforeHold=0   1 shows the prompt before you press anything
@@ -89,19 +102,21 @@ Using a gamepad
 
 Holding a pad button works just like holding ENTER. Which button is up to you,
 set it in Keys: PAD_CROSS, PAD_CIRCLE, PAD_SQUARE, PAD_TRIANGLE, PAD_L1, PAD_L2,
-PAD_R1 or PAD_R2. This works with a plain DirectInput pad and with GInputSA.
+PAD_R1 or PAD_R2. This works with a plain DirectInput pad and with GInput, in
+both games.
 
-If GInputSA is installed, the button is also drawn as an icon in the middle of
+If GInput is installed, the button is also drawn as an icon in the middle of
 the circle, with the progress sweeping around it. The icon is taken from
-GInputSA's own textures in your models folder, and it follows GInputSA's
-PlayStationButtons setting. Without GInputSA the prompt stays text only.
+GInput's own textures in your models folder, and it follows GInput's
+PlayStationButtons setting. Without GInput the prompt stays text only.
 
-So if you play on a pad, installing GInputSA is worth it. Get it from
+So if you play on a pad, installing GInput is worth it. Get the build for your
+game from
     https://cookieplmonster.github.io/mods/gta-sa/ginput/
 put it in the game folder, and the icon shows up by itself. Nothing has to be
-changed in MissionHoldSkipper.ini for that, and the icon style follows whatever
-GInputSA is set to. If you want to force it, use PadIconStyle=ps or
-PadIconStyle=xbox, or PadIconMode=off to keep the prompt text only.
+changed in the ini for that, and the icon style follows whatever GInput is set
+to. If you want to force it, use PadIconStyle=ps or PadIconStyle=xbox, or
+PadIconMode=off to keep the prompt text only.
 
 If the prompt shows the wrong device, set PromptDevice=keyboard or
 PromptDevice=pad.
@@ -109,17 +124,18 @@ PromptDevice=pad.
 
 Uninstalling
 
-Delete MissionHoldSkipper.asi, MissionHoldSkipper.ini, and
-MissionHoldSkipper.log from the game folder. Nothing else is modified. The
-plugin only patches memory while the game runs and never writes to gta_sa.exe.
+Delete the .asi, the .ini and the .log for your game from the game folder.
+Nothing else is modified. The plugin only patches memory while the game runs and
+never writes to the game exe.
 
 
 Troubleshooting
 
 The prompt never appears.
-   The scene has to be skippable in the first place. Vanilla San Andreas only
-   allows skipping during mission cutscenes and scripted scenes, not during
-   normal gameplay. Check the log for "hooks installed".
+   The scene has to be skippable in the first place. San Andreas allows skipping
+   during mission cutscenes and scripted scenes, GTA III only during the flyby
+   part of a cutscene, which is exactly where vanilla would have skipped too.
+   Check the log for "hooks installed".
 
 The prompt appears but the scene never skips.
    Make sure you keep the key held for the whole duration. Lower HoldMs if
@@ -131,7 +147,7 @@ The circle sits in the wrong place.
 
 The game crashes on startup.
    Remove the .asi and confirm the game starts. If it does, report the issue
-   with your MissionHoldSkipper.log and the md5 of your gta_sa.exe.
+   with your log file and the md5 of your game exe.
 
 
 License
