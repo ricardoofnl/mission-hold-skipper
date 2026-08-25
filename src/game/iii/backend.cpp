@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <cmath>
 #include <cstdint>
+#include <cstring>
 #include <iterator>
 
 #include <windows.h>
@@ -34,6 +35,7 @@ void __cdecl HookedCHudDraw() {
     static bool logged = false;
     if (!logged) {
         logged = true;
+        MHS_LOG_INFO("first frame through the draw hook");
         if (auto* pad = ginput::Pad()) {
             MHS_LOG_INFO("GInput API in use, version 0x%06X, pad connected %d",
                          pad->GetVersion(), pad->IsPadConnected() ? 1 : 0);
@@ -54,6 +56,16 @@ bool FindCall(const char* what, std::uintptr_t from, std::size_t size,
     out = found.at;
     MHS_LOG_INFO("call to %s sits at 0x%08X", what, out);
     return true;
+}
+
+bool CallPointsAt(std::uintptr_t at, const void* target) {
+    const auto* site = reinterpret_cast<const std::uint8_t*>(at);
+    if (site[0] != 0xE8) {
+        return false;
+    }
+    std::int32_t relative{};
+    std::memcpy(&relative, site + 1, sizeof(relative));
+    return at + 5 + static_cast<std::uintptr_t>(relative) == reinterpret_cast<std::uintptr_t>(target);
 }
 
 } // namespace
@@ -93,6 +105,12 @@ bool InstallHooks() {
     }
     if (!hook::RedirectCall(g_hudDrawCall, &HookedCHudDraw)) {
         MHS_LOG_ERROR("failed to redirect the CHud::Draw call");
+        return false;
+    }
+    // another mod can repoint the same two calls, and the last one to load wins
+    if (!CallPointsAt(g_finishCall, &HookedFinishCutscene)
+        || !CallPointsAt(g_hudDrawCall, &HookedCHudDraw)) {
+        MHS_LOG_WARN("a call site does not point at the plugin, hold to skip is inactive");
         return false;
     }
     return true;

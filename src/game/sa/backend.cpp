@@ -44,6 +44,7 @@ void __cdecl HookedCHudDraw() {
     static bool verified = false;
     if (!verified) {
         verified = true;
+        MHS_LOG_INFO("first frame through the draw hook");
         VerifySkipHook();
         if (auto* pad = ginput::Pad()) {
             MHS_LOG_INFO("GInput API in use, version 0x%06X, pad connected %d",
