@@ -1,9 +1,11 @@
 #include <cstdint>
+#include <cstring>
 #include <string>
 
 #include <windows.h>
 
 #include "config.hpp"
+#include "ginput.hpp"
 #include "hold_skip.hpp"
 #include "hook.hpp"
 #include "log.hpp"
@@ -20,13 +22,39 @@ namespace addr = mhs::sa::addr;
 
 bool __cdecl HookedIsSkipButtonPressed() {
     mhs::hold_skip::TickOncePerFrame();
-    // the lost focus auto skip is vanilla behaviour, dropping it would stall a
-    // scene while the game sits in the background
+    // vanilla auto skips while the game is in the background, keep that
     return mhs::hold_skip::ConsumeCompleted() || !mhs::sa::IsForeground();
+}
+
+// another input mod may replace the same function, and the last one to load wins
+void VerifySkipHook() {
+    const auto* at = reinterpret_cast<const std::uint8_t*>(addr::IsCutsceneSkipButtonBeingPressed);
+    if (at[0] == 0xE9) {
+        std::int32_t relative{};
+        std::memcpy(&relative, at + 1, sizeof(relative));
+        const auto target = addr::IsCutsceneSkipButtonBeingPressed + 5 + static_cast<std::uintptr_t>(relative);
+        if (target == reinterpret_cast<std::uintptr_t>(&HookedIsSkipButtonPressed)) {
+            return;
+        }
+    }
+    MHS_LOG_WARN("something replaced the skip button hook, hold to skip is inactive");
 }
 
 void __cdecl HookedCHudDraw() {
     mhs::sa::CHudDraw();
+
+    // by the first frame every other .asi has had its turn at patching, and
+    // GInput, which must never be touched from DllMain, is up
+    static bool verified = false;
+    if (!verified) {
+        verified = true;
+        VerifySkipHook();
+        if (auto* pad = mhs::ginput::Pad()) {
+            MHS_LOG_INFO("GInput API in use, version 0x%06X, pad connected %d",
+                         pad->GetVersion(), pad->IsPadConnected() ? 1 : 0);
+        }
+    }
+
     mhs::hold_skip::TickOncePerFrame();
     mhs::hold_skip::Draw();
 }
@@ -128,6 +156,9 @@ BOOL APIENTRY DllMain(HMODULE module, DWORD reason, LPVOID) {
     }
 
     MHS_LOG_INFO("version check ok, screen %.0fx%.0f", mhs::sa::ScreenWidth(), mhs::sa::ScreenHeight());
+    if (GetModuleHandleA("GInputSA.asi")) {
+        MHS_LOG_INFO("GInputSA detected, pad input arrives through it");
+    }
     Install();
     return TRUE;
 }

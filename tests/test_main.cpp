@@ -1,9 +1,11 @@
-// host side checks for the parts that never touch game memory
 #include <cmath>
 #include <cstdio>
+#include <string>
 #include <vector>
 
 #include "hold_state.hpp"
+#include "pad_button.hpp"
+#include "prompt_device.hpp"
 #include "ring.hpp"
 
 namespace {
@@ -41,7 +43,6 @@ void TestArcGeometry() {
     const auto count = mhs::ring::BuildArc(quads.data(), quads.size(), cx, cy, outer, inner, 1.0f, 64);
     Check(count == 64, "geometry test got its segments");
 
-    // first segment starts straight up
     Check(std::fabs(quads[0].x[1] - cx) < 0.001f, "arc starts on the vertical axis");
     Check(quads[0].y[1] < cy, "arc starts above the centre");
 
@@ -79,7 +80,6 @@ void TestHoldState() {
     state.Update(true, true, 1500);
     Check(state.ConsumeCompleted(), "a fresh hold can fire again");
 
-    // completing and releasing in the same frame must not leave a pending skip
     mhs::HoldState late;
     late.SetHoldMs(100);
     late.Update(true, true, 200);
@@ -102,7 +102,6 @@ void TestFadeAnim() {
     Check(fade.Value() == 1.0f, "fade in stops at one");
     Check(std::fabs(fade.Eased() - 1.0f) < 0.001f, "eased value tops out too");
 
-    // hiding takes the longer duration, and it keeps drawing until it lands on zero
     fade.Update(false, 100);
     Check(std::fabs(fade.Value() - 0.5f) < 0.001f, "fade out follows its own duration");
     Check(fade.Visible(), "still drawn while fading out");
@@ -112,6 +111,62 @@ void TestFadeAnim() {
     Check(!fade.Visible(), "hidden once the fade out finished");
 }
 
+void TestPromptDevice() {
+    mhs::DeviceTracker tracker;
+    Check(!tracker.PadPrompt(), "starts on the keyboard prompt");
+
+    tracker.Update(false, true);
+    Check(tracker.PadPrompt(), "pad input switches the prompt");
+
+    tracker.Update(false, false);
+    Check(tracker.PadPrompt(), "no input keeps the last device");
+
+    tracker.Update(true, false);
+    Check(!tracker.PadPrompt(), "keyboard input switches back");
+
+    tracker.Update(true, true);
+    Check(!tracker.PadPrompt(), "keyboard wins when both report input");
+
+    tracker.Update(false, true);
+    tracker.SetForced(mhs::PromptDevice::Keyboard);
+    Check(!tracker.PadPrompt(), "forcing keyboard overrides detection");
+    tracker.SetForced(mhs::PromptDevice::Pad);
+    Check(tracker.PadPrompt(), "forcing pad overrides detection");
+    tracker.SetForced(mhs::PromptDevice::Auto);
+    Check(tracker.PadPrompt(), "auto returns to what was detected");
+
+    const std::string keyboard = "HOLD ENTER TO SKIP";
+    const std::string pad      = "HOLD ~x~ TO SKIP";
+    const std::string empty;
+    Check(mhs::PickLabel(true, keyboard, pad) == pad, "pad prompt picks the pad label");
+    Check(mhs::PickLabel(false, keyboard, pad) == keyboard, "keyboard prompt picks the keyboard label");
+    Check(mhs::PickLabel(true, keyboard, empty) == keyboard, "an empty pad label falls back");
+}
+
+void TestPadButtons() {
+    Check(mhs::FindPadButton("PAD_CROSS") == 0, "the first token is Cross");
+    Check(mhs::FindPadButton("PAD_TRIANGLE") >= 0, "Triangle is a known token");
+    Check(mhs::FindPadButton("PAD_NOPE") == -1, "an unknown token is rejected");
+    Check(mhs::FindPadButton("pad_cross") == -1, "tokens are matched after upper casing");
+
+    const auto cross = mhs::kPadButtons[mhs::FindPadButton("PAD_CROSS")];
+    Check(cross.offset == 0x20, "Cross sits at 0x20");
+    Check(cross.texture == "cross", "Cross maps to the cross texture");
+    const auto square = mhs::kPadButtons[mhs::FindPadButton("PAD_SQUARE")];
+    Check(square.offset == 0x1C, "Square sits at 0x1C");
+    const auto r2 = mhs::kPadButtons[mhs::FindPadButton("PAD_R2")];
+    Check(r2.offset == 0x0E, "R2 sits at 0x0E");
+
+    for (std::size_t i = 0; i < mhs::kPadButtonCount; ++i) {
+        Check(mhs::kPadButtons[i].offset % 2 == 0, "every offset lands on an int16");
+        Check(mhs::kPadButtons[i].offset < 0x30, "every offset stays inside CControllerState");
+    }
+
+    Check(mhs::FirstPadButton(0) == -1, "no enabled button means no icon");
+    Check(mhs::FirstPadButton(1u << 3) == 3, "a single button is picked");
+    Check(mhs::FirstPadButton((1u << 3) | (1u << 1)) == 1, "the lowest enabled button wins");
+}
+
 } // namespace
 
 int main() {
@@ -119,6 +174,8 @@ int main() {
     TestArcGeometry();
     TestHoldState();
     TestFadeAnim();
+    TestPromptDevice();
+    TestPadButtons();
 
     if (g_failures == 0) {
         std::printf("all checks passed\n");

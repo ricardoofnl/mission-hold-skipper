@@ -8,7 +8,6 @@ namespace mhs::sa::addr {
 
 using ea = std::uintptr_t;
 
-// functions
 constexpr ea IsCutsceneSkipButtonBeingPressed = 0x4D5D10;
 constexpr ea IsForeground                     = 0x746070;
 constexpr ea CRunningScript_Process           = 0x469F00;
@@ -16,6 +15,15 @@ constexpr ea CHud_Draw                        = 0x58FAE0;
 
 constexpr ea CSprite2d_Draw2DPolygon = 0x7285B0;
 constexpr ea CSprite2d_DrawRect      = 0x727B60;
+constexpr ea CSprite2d_SetTexture    = 0x727270;
+constexpr ea CSprite2d_Draw_CRect    = 0x728350;
+
+constexpr ea CTxdStore_AddTxdSlot     = 0x731C80;
+constexpr ea CTxdStore_LoadTxd        = 0x7320B0;
+constexpr ea CTxdStore_AddRef         = 0x731A00;
+constexpr ea CTxdStore_PushCurrentTxd = 0x7316A0;
+constexpr ea CTxdStore_SetCurrentTxd  = 0x7319C0;
+constexpr ea CTxdStore_PopCurrentTxd  = 0x7316B0;
 
 constexpr ea CFont_SetScale              = 0x719380;
 constexpr ea CFont_SetColor              = 0x719430;
@@ -33,11 +41,10 @@ constexpr ea CFont_SetOrientation        = 0x719610;
 constexpr ea CFont_GetStringWidth        = 0x71A0E0;
 constexpr ea CFont_PrintString           = 0x71A700;
 
-// the call to CHud::Draw inside Render2dStuff, patched instead of the callee
-// so the original stays reachable without a trampoline
+// the call inside Render2dStuff, patched instead of CHud::Draw itself so the
+// original stays reachable without a trampoline
 constexpr ea Render2dStuff_CallCHudDraw = 0x53E4FF;
 
-// data
 constexpr ea CTheScripts_pActiveScripts = 0xA8B42C;
 constexpr ea CTheScripts_pIdleScripts   = 0xA8B428;
 constexpr ea CTheScripts_ScriptSpace    = 0xA49960;

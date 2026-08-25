@@ -3,9 +3,15 @@
 #include <cstdint>
 #include <string>
 
+#include "pad_button.hpp"
+#include "prompt_device.hpp"
 #include "sa/game.hpp"
 
 namespace mhs {
+
+enum class IconMode { Auto, Sprite, Off };
+
+enum class IconStyle { Auto, PlayStation, Xbox };
 
 struct Config {
     bool enabled{true};
@@ -15,25 +21,30 @@ struct Config {
     bool          keyNumpadEnter{true};
     bool          keySpace{false};
     bool          keyMouseLeft{true};
+    unsigned      padMask{1u << 0}; // PAD_CROSS
 
-    // off by default, the prompt only shows while the key is actually held
-    bool        showHintBeforeHold{false};
-    std::string label{"HOLD ENTER TO SKIP"};
+    bool         showHintBeforeHold{false};
+    std::string  label{"HOLD ENTER TO SKIP"};
+    std::string  labelPad{"HOLD TO SKIP"};
+    PromptDevice promptDevice{PromptDevice::Auto};
 
     std::uint32_t fadeInMs{140};
     std::uint32_t fadeOutMs{220};
 
-    // -1 keeps the default bottom right placement, otherwise these are 640x448 units
+    // -1 keeps the bottom right placement, anything else is in 640x448 units
     float ringX{-1.0f};
     float ringY{-1.0f};
-    float ringRadius{13.0f};
+    float ringRadius{18.0f};
     float ringThickness{2.5f};
     int   ringSegments{48};
+
+    IconMode  iconMode{IconMode::Auto};
+    IconStyle iconStyle{IconStyle::Auto};
+    float     iconScale{1.5f};
 
     float labelScaleX{0.28f};
     float labelScaleY{0.7f};
 
-    // plain black disc, the white arc fills over its rim while ENTER is held
     sa::CRGBA colorBackdrop{0, 0, 0, 200};
     sa::CRGBA colorTrack{255, 255, 255, 0};
     sa::CRGBA colorProgress{255, 255, 255, 255};
@@ -43,7 +54,6 @@ struct Config {
 
 Config& Cfg();
 
-// missing file or missing keys just leave the defaults in place
 void LoadConfig(const std::string& iniPath);
 
 } // namespace mhs

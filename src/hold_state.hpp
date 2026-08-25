@@ -5,7 +5,6 @@
 
 namespace mhs {
 
-// pure hold timer, no game memory, so it can be exercised in a host test
 class HoldState {
 public:
     void SetHoldMs(std::uint32_t ms) { m_holdMs = ms == 0 ? 1 : ms; }
@@ -29,7 +28,6 @@ public:
         }
     }
 
-    // true once per completed hold, the caller acts on it
     bool ConsumeCompleted() {
         const bool completed = m_completed;
         m_completed          = false;
@@ -44,8 +42,7 @@ public:
     bool Holding() const { return m_heldMs > 0; }
 
 private:
-    // releasing the key drops a completion that nobody consumed yet, otherwise a
-    // late skip could fire after the player already let go
+    // clears m_completed too, a release must not leave a skip pending
     void Reset() {
         m_heldMs    = 0;
         m_latched   = false;
@@ -59,7 +56,6 @@ private:
     bool          m_completed{false};
 };
 
-// show and hide easing for the prompt, also pure so the test can drive it
 class FadeAnim {
 public:
     void Configure(std::uint32_t inMs, std::uint32_t outMs) {
@@ -75,7 +71,6 @@ public:
 
     float Value() const { return m_value; }
 
-    // ease out cubic, the usual pop in and settle
     float Eased() const {
         const float inverse = 1.0f - m_value;
         return 1.0f - inverse * inverse * inverse;

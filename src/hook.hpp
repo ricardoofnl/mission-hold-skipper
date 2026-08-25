@@ -32,7 +32,6 @@ inline bool MakeJmp(std::uintptr_t at, const void* target) {
     return WriteBytes(at, patch, sizeof(patch));
 }
 
-// repoints an existing call rel32, so the callee itself stays untouched
 inline bool RedirectCall(std::uintptr_t at, const void* target) {
     if (*reinterpret_cast<const std::uint8_t*>(at) != 0xE8) {
         return false;

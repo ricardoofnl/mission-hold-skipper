@@ -17,8 +17,6 @@ constexpr int kMaxSegments = 256;
 
 int ClampSegments(int segments);
 
-// fills out with the segments covering progress of a full turn, starting at the
-// top and going clockwise, returns how many were written
 std::size_t BuildArc(Quad* out, std::size_t capacity, float cx, float cy,
                      float outerRadius, float innerRadius, float progress, int segments);
 

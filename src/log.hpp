@@ -32,7 +32,6 @@ inline void SetMinLevel(const std::string& name) {
     }
 }
 
-// log next to the loaded .asi, same base name
 inline void Init(HMODULE self) {
     char       buffer[MAX_PATH]{};
     const DWORD length = GetModuleFileNameA(self, buffer, MAX_PATH);

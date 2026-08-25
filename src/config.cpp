@@ -54,6 +54,7 @@ void ParseKeys(const std::string& value, Config& cfg) {
         return;
     }
     cfg.keyEnter = cfg.keyNumpadEnter = cfg.keySpace = cfg.keyMouseLeft = false;
+    cfg.padMask  = 0;
 
     const auto upper = Upper(value);
     for (std::size_t start = 0; start <= upper.size();) {
@@ -73,6 +74,8 @@ void ParseKeys(const std::string& value, Config& cfg) {
             cfg.keySpace = true;
         } else if (token == "MOUSE_LEFT") {
             cfg.keyMouseLeft = true;
+        } else if (const auto pad = FindPadButton(token); pad >= 0) {
+            cfg.padMask |= 1u << pad;
         } else if (!token.empty()) {
             MHS_LOG_WARN("unknown key in Keys: %s", token.c_str());
         }
@@ -83,10 +86,64 @@ void ParseKeys(const std::string& value, Config& cfg) {
         start = comma + 1;
     }
 
-    if (!cfg.keyEnter && !cfg.keyNumpadEnter && !cfg.keySpace && !cfg.keyMouseLeft) {
+    if (!cfg.keyEnter && !cfg.keyNumpadEnter && !cfg.keySpace && !cfg.keyMouseLeft && cfg.padMask == 0) {
         MHS_LOG_WARN("Keys left nothing usable, falling back to ENTER");
         cfg.keyEnter = cfg.keyNumpadEnter = true;
     }
+}
+
+IconMode ParseIconMode(const std::string& value, IconMode fallback) {
+    if (value.empty()) {
+        return fallback;
+    }
+    const auto upper = Upper(value);
+    if (upper == "SPRITE") {
+        return IconMode::Sprite;
+    }
+    if (upper == "OFF" || upper == "0") {
+        return IconMode::Off;
+    }
+    if (upper == "AUTO") {
+        return IconMode::Auto;
+    }
+    MHS_LOG_WARN("unknown PadIconMode '%s', keeping auto", value.c_str());
+    return IconMode::Auto;
+}
+
+IconStyle ParseIconStyle(const std::string& value, IconStyle fallback) {
+    if (value.empty()) {
+        return fallback;
+    }
+    const auto upper = Upper(value);
+    if (upper == "PS" || upper == "PLAYSTATION") {
+        return IconStyle::PlayStation;
+    }
+    if (upper == "XBOX" || upper == "X360") {
+        return IconStyle::Xbox;
+    }
+    if (upper == "AUTO") {
+        return IconStyle::Auto;
+    }
+    MHS_LOG_WARN("unknown PadIconStyle '%s', keeping auto", value.c_str());
+    return IconStyle::Auto;
+}
+
+PromptDevice ParsePromptDevice(const std::string& value, PromptDevice fallback) {
+    if (value.empty()) {
+        return fallback;
+    }
+    const auto upper = Upper(value);
+    if (upper == "KEYBOARD") {
+        return PromptDevice::Keyboard;
+    }
+    if (upper == "PAD") {
+        return PromptDevice::Pad;
+    }
+    if (upper == "AUTO") {
+        return PromptDevice::Auto;
+    }
+    MHS_LOG_WARN("unknown PromptDevice '%s', keeping auto", value.c_str());
+    return PromptDevice::Auto;
 }
 
 } // namespace
@@ -125,6 +182,9 @@ void LoadConfig(const std::string& iniPath) {
     cfg.ringRadius         = number("RingRadius", cfg.ringRadius);
     cfg.ringThickness      = number("RingThickness", cfg.ringThickness);
     cfg.ringSegments       = static_cast<int>(number("RingSegments", static_cast<float>(cfg.ringSegments)));
+    cfg.iconMode           = ParseIconMode(get("PadIconMode"), cfg.iconMode);
+    cfg.iconStyle          = ParseIconStyle(get("PadIconStyle"), cfg.iconStyle);
+    cfg.iconScale          = number("PadIconScale", cfg.iconScale);
     cfg.labelScaleX        = number("LabelScaleX", cfg.labelScaleX);
     cfg.labelScaleY        = number("LabelScaleY", cfg.labelScaleY);
     cfg.colorBackdrop      = ParseColor(get("ColorBackdrop"), cfg.colorBackdrop);
@@ -134,6 +194,10 @@ void LoadConfig(const std::string& iniPath) {
     if (const auto label = get("Label"); !label.empty()) {
         cfg.label = label;
     }
+    if (section.has("LabelPad")) {
+        cfg.labelPad = get("LabelPad");
+    }
+    cfg.promptDevice = ParsePromptDevice(get("PromptDevice"), cfg.promptDevice);
     if (const auto level = get("LogLevel"); !level.empty()) {
         cfg.logLevel = level;
     }

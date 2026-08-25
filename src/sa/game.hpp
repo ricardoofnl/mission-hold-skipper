@@ -45,7 +45,7 @@ static_assert(offsetof(CKeyboardState, extenter) == 0x25A);
 
 #pragma pack(pop)
 
-// natural alignment here, the float lands at 8 after a pad byte
+// stays outside the packed block, the float is aligned to 8 after a pad byte
 struct CMouseControllerState {
     bool  lButton;
     bool  rButton;
@@ -61,7 +61,43 @@ struct CMouseControllerState {
 static_assert(sizeof(CMouseControllerState) == 0x14);
 static_assert(offsetof(CMouseControllerState, wheelMoved) == 8);
 
-// only the fields we touch are named, the rest is here to keep the offsets right
+// member order is left, top, right, bottom, unlike the original constructor
+struct CRect {
+    float left, top, right, bottom;
+};
+static_assert(sizeof(CRect) == 16);
+
+struct CSprite2d {
+    void* texture;
+};
+static_assert(sizeof(CSprite2d) == 4);
+
+// keyboard, mouse and pad all end up here, which is why reading it covers GInput
+struct CControllerState {
+    std::int16_t LeftStickX, LeftStickY, RightStickX, RightStickY;
+    std::int16_t LeftShoulder1, LeftShoulder2, RightShoulder1, RightShoulder2;
+    std::int16_t DPadUp, DPadDown, DPadLeft, DPadRight;
+    std::int16_t Start, Select;
+    std::int16_t ButtonSquare, ButtonTriangle, ButtonCross, ButtonCircle;
+    std::int16_t ShockButtonL, ShockButtonR;
+    std::int16_t chatIndicated, pedWalk, vehicleMouseLook, radioTrackSkip;
+};
+static_assert(sizeof(CControllerState) == 0x30);
+static_assert(offsetof(CControllerState, ButtonCross) == 0x20);
+
+// prefix only, the real CPad is 0x134 bytes, so never index this as an array
+struct CPadPrefix {
+    CControllerState NewState;
+    CControllerState OldState;
+    std::int16_t     SteeringLeftRightBuffer[10];
+    std::int32_t     DrunkDrivingBufferUsed;
+    CControllerState PCTempKeyState;
+    CControllerState PCTempJoyState;
+    CControllerState PCTempMouseState;
+};
+static_assert(offsetof(CPadPrefix, OldState) == 0x30);
+static_assert(offsetof(CPadPrefix, PCTempJoyState) == 0xA8);
+
 struct CRunningScript {
     CRunningScript* m_pNext;
     CRunningScript* m_pPrev;
@@ -110,6 +146,8 @@ inline CKeyboardState& OldKeyState() { return ref<CKeyboardState>(addr::CPad_Old
 inline CMouseControllerState& NewMouseState() { return ref<CMouseControllerState>(addr::CPad_NewMouseState); }
 inline CMouseControllerState& OldMouseState() { return ref<CMouseControllerState>(addr::CPad_OldMouseState); }
 
+inline CPadPrefix& Pad0() { return ref<CPadPrefix>(addr::CPad_Pads); }
+
 inline CRunningScript* ActiveScripts() { return ref<CRunningScript*>(addr::CTheScripts_pActiveScripts); }
 
 inline bool CutsceneRunning() {
@@ -122,7 +160,7 @@ inline std::uint32_t FrameCounter() { return ref<std::uint32_t>(addr::CTimer_Fra
 inline float ScreenWidth() { return static_cast<float>(ref<std::int32_t>(addr::RsGlobal_maximumWidth)); }
 inline float ScreenHeight() { return static_cast<float>(ref<std::int32_t>(addr::RsGlobal_maximumHeight)); }
 
-// game art is authored for 640x448, same convention as SCREEN_STRETCH_* in gta-reversed
+// game art is authored for 640x448
 inline float ScaleX(float v) { return v * ScreenWidth() / 640.0f; }
 inline float ScaleY(float v) { return v * ScreenHeight() / 448.0f; }
 
@@ -134,6 +172,29 @@ inline void Draw2DPolygon(float x1, float y1, float x2, float y2,
                           float x3, float y3, float x4, float y4, const CRGBA& color) {
     fn<void(__cdecl*)(float, float, float, float, float, float, float, float, const CRGBA&)>(
         addr::CSprite2d_Draw2DPolygon)(x1, y1, x2, y2, x3, y3, x4, y4, color);
+}
+
+namespace txd {
+inline int AddSlot(const char* name) {
+    return fn<int(__cdecl*)(const char*)>(addr::CTxdStore_AddTxdSlot)(name);
+}
+inline bool Load(int slot, const char* file) {
+    return fn<bool(__cdecl*)(int, const char*)>(addr::CTxdStore_LoadTxd)(slot, file);
+}
+inline void AddRef(int slot) { fn<void(__cdecl*)(int)>(addr::CTxdStore_AddRef)(slot); }
+inline void PushCurrent() { fn<void(__cdecl*)()>(addr::CTxdStore_PushCurrentTxd)(); }
+inline void SetCurrent(int slot) { fn<void(__cdecl*)(int)>(addr::CTxdStore_SetCurrentTxd)(slot); }
+inline void PopCurrent() { fn<void(__cdecl*)()>(addr::CTxdStore_PopCurrentTxd)(); }
+} // namespace txd
+
+// resolves the name against the current txd, so wrap it in Push/SetCurrent/Pop
+inline void SpriteSetTexture(CSprite2d& sprite, const char* name) {
+    fn<void(__thiscall*)(CSprite2d*, const char*)>(addr::CSprite2d_SetTexture)(&sprite, name);
+}
+
+inline void SpriteDraw(CSprite2d& sprite, const CRect& rect, const CRGBA& color) {
+    fn<void(__thiscall*)(CSprite2d*, const CRect&, const CRGBA&)>(
+        addr::CSprite2d_Draw_CRect)(&sprite, rect, color);
 }
 
 namespace font {

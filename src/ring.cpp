@@ -36,9 +36,7 @@ std::size_t BuildArc(Quad* out, std::size_t capacity, float cx, float cy,
         if (a0 >= sweep - 1e-5f) {
             break;
         }
-        // the last segment is cut short so a partial fill lands on the exact angle
         const float a1 = std::min(a0 + step, sweep);
-
         const float c0 = std::cos(kStart + a0);
         const float s0 = std::sin(kStart + a0);
         const float c1 = std::cos(kStart + a1);
