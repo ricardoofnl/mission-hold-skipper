@@ -58,6 +58,7 @@ if(WIN32)
     find_package(mini REQUIRED)
 
     mhs_add_plugin(MissionHoldSkipper GAME MHS_GAME_SA BACKEND src/game/sa/backend.cpp)
+    mhs_add_plugin(MissionHoldSkipperIII GAME MHS_GAME_III BACKEND src/game/iii/backend.cpp)
 endif()
 
 # geometry and hold state machine touch no game memory, so they build natively

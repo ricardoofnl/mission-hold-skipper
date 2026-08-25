@@ -148,6 +148,13 @@ void TickOncePerFrame() {
     const bool available = game::SkipAvailable();
     g_state.Update(available, KeyDown(), delta);
 
+    // SA's own hook consumes the completion, III and VC need us to do the skip
+    if constexpr (game::kSkipIsExplicit) {
+        if (g_state.ConsumeCompleted()) {
+            game::PerformSkip();
+        }
+    }
+
     g_device.SetForced(cfg.promptDevice);
     const bool keyboardActive = game::KeyboardOrMouseActive();
     g_device.Update(keyboardActive, game::PadActive(keyboardActive));
