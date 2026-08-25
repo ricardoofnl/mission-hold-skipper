@@ -58,6 +58,31 @@ const char* IconTxdPath() {
     return playStation ? "models\\ps3btns.txd" : "models\\x360btns.txd";
 }
 
+bool LoadIconTxd(const char* path, int button) {
+    const int slot = game::txd::AddSlot("mhsbtns");
+    if (slot < 0 || !game::txd::Load(slot, path)) {
+        return false;
+    }
+    game::txd::AddRef(slot);
+    game::txd::PushCurrent();
+    game::txd::SetCurrent(slot);
+    game::SpriteSetTexture(g_icon, kPadButtons[button].texture.data());
+    game::txd::PopCurrent();
+    return g_icon.texture != nullptr;
+}
+
+// CTxdStore runs on the render thread here, a fault inside it must not take the
+// game down with us
+bool LoadIconGuarded(const char* path, int button) {
+    __try {
+        return LoadIconTxd(path, button);
+    } __except (EXCEPTION_EXECUTE_HANDLER) {
+        return false;
+    }
+}
+
+// deferred until the pad prompt is actually on screen, loading a txd while the
+// game is still starting up crashes GTA III
 void LoadIconOnce() {
     if (g_iconTried) {
         return;
@@ -79,19 +104,9 @@ void LoadIconOnce() {
         return;
     }
 
-    const int slot = game::txd::AddSlot("mhsbtns");
-    if (slot < 0 || !game::txd::Load(slot, path)) {
-        MHS_LOG_WARN("could not load %s", path);
-        return;
-    }
-    game::txd::AddRef(slot);
-    game::txd::PushCurrent();
-    game::txd::SetCurrent(slot);
-    game::SpriteSetTexture(g_icon, kPadButtons[button].texture.data());
-    game::txd::PopCurrent();
-
-    if (!g_icon.texture) {
-        MHS_LOG_WARN("texture '%s' missing from %s", kPadButtons[button].texture.data(), path);
+    if (!LoadIconGuarded(path, button)) {
+        MHS_LOG_WARN("could not take '%s' from %s, the prompt stays text only",
+                     kPadButtons[button].texture.data(), path);
         return;
     }
     MHS_LOG_INFO("pad icon '%s' loaded from %s", kPadButtons[button].texture.data(), path);
@@ -167,8 +182,6 @@ void TickOncePerFrame() {
 
     g_fade.Configure(cfg.fadeInMs, cfg.fadeOutMs);
     g_fade.Update(available && (g_state.Holding() || cfg.showHintBeforeHold), delta);
-
-    LoadIconOnce();
 }
 
 bool ConsumeCompleted() {
@@ -212,6 +225,9 @@ void Draw() {
     const auto alpha = static_cast<std::uint8_t>(std::clamp(255.0f * appear, 0.0f, 255.0f));
 
     // keyboard has no glyph anywhere, not in the game and not in GInput's txd
+    if (g_device.PadPrompt()) {
+        LoadIconOnce();
+    }
     if (g_icon.texture && g_device.PadPrompt()) {
         const float half = inner * cfg.iconScale * 0.5f;
         const game::CRect rect{centerX - half, centerY - half, centerX + half, centerY + half};
