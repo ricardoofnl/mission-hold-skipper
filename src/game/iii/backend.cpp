@@ -155,7 +155,7 @@ bool PadActive(bool keyboardActive) {
 }
 
 void DrawLabel(float x, float y, const char* text, CRGBA color, CRGBA drop,
-               float scaleX, float scaleY, float wrapAt) {
+               float scaleX, float scaleY, float wrapAt, int fontStyle) {
     // III and VC print 16 bit characters, unlike SA
     std::uint16_t wide[96]{};
     std::size_t   length = 0;
@@ -166,7 +166,7 @@ void DrawLabel(float x, float y, const char* text, CRGBA color, CRGBA drop,
 
     font::SetBackgroundOff();
     font::SetPropOn();
-    font::SetFontStyle(FONT_HEADING);
+    font::SetFontStyle(fontStyle < 0 ? FONT_HEADING : static_cast<std::int16_t>(fontStyle));
     font::SetScale(scaleX, scaleY);
     font::SetJustifyOff();
     font::SetRightJustifyOn();

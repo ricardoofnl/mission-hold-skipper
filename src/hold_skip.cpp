@@ -231,7 +231,8 @@ void Draw() {
                     game::CRGBA{0, 0, 0, alpha},
                     game::ScaleX(cfg.labelScaleX),
                     game::ScaleY(cfg.labelScaleY),
-                    game::ScreenWidth());
+                    game::ScreenWidth(),
+                    cfg.fontStyle);
 }
 
 } // namespace mhs::hold_skip

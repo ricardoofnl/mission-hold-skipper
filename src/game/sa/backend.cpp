@@ -178,10 +178,10 @@ bool PadActive(bool keyboardActive) {
 }
 
 void DrawLabel(float x, float y, const char* text, CRGBA color, CRGBA drop,
-               float scaleX, float scaleY, float wrapAt) {
+               float scaleX, float scaleY, float wrapAt, int fontStyle) {
     font::SetBackground(false, false);
     font::SetProportional(true);
-    font::SetFontStyle(FONT_MENU);
+    font::SetFontStyle(fontStyle < 0 ? FONT_MENU : static_cast<eFontStyle>(fontStyle));
     font::SetScale(scaleX, scaleY);
     font::SetJustify(false);
     font::SetOrientation(ALIGN_RIGHT);

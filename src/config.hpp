@@ -44,6 +44,8 @@ struct Config {
 
     float labelScaleX{0.28f};
     float labelScaleY{0.7f};
+    // -1 keeps each game's own default font
+    int   fontStyle{-1};
 
     game::CRGBA colorBackdrop{0, 0, 0, 200};
     game::CRGBA colorTrack{255, 255, 255, 0};

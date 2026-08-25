@@ -187,6 +187,7 @@ void LoadConfig(const std::string& iniPath) {
     cfg.iconScale          = number("PadIconScale", cfg.iconScale);
     cfg.labelScaleX        = number("LabelScaleX", cfg.labelScaleX);
     cfg.labelScaleY        = number("LabelScaleY", cfg.labelScaleY);
+    cfg.fontStyle          = static_cast<int>(number("FontStyle", static_cast<float>(cfg.fontStyle)));
     cfg.colorBackdrop      = ParseColor(get("ColorBackdrop"), cfg.colorBackdrop);
     cfg.colorTrack         = ParseColor(get("ColorTrack"), cfg.colorTrack);
     cfg.colorProgress      = ParseColor(get("ColorProgress"), cfg.colorProgress);

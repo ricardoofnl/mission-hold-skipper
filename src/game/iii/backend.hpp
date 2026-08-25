@@ -27,6 +27,6 @@ bool KeyboardOrMouseActive();
 bool PadActive(bool keyboardActive);
 
 void DrawLabel(float x, float y, const char* text, CRGBA color, CRGBA drop,
-               float scaleX, float scaleY, float wrapAt);
+               float scaleX, float scaleY, float wrapAt, int fontStyle);
 
 } // namespace mhs::iii
