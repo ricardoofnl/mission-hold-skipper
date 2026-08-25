@@ -1,3 +1,4 @@
+#include <cstdio>
 #include <string>
 
 #include <windows.h>
@@ -23,6 +24,15 @@ std::string ModulePathWithExtension(HMODULE module, const char* extension) {
     return path + extension;
 }
 
+// two copies in one process fight over the same call sites, and the loser sees
+// them already patched and reports the game as unsupported
+bool AnotherCopyLoaded() {
+    char name[64]{};
+    std::snprintf(name, sizeof(name), "MissionHoldSkipper-%lu", GetCurrentProcessId());
+    static HANDLE guard = CreateMutexA(nullptr, TRUE, name);
+    return guard == nullptr || GetLastError() == ERROR_ALREADY_EXISTS;
+}
+
 } // namespace
 
 BOOL APIENTRY DllMain(HMODULE module, DWORD reason, LPVOID) {
@@ -40,6 +50,11 @@ BOOL APIENTRY DllMain(HMODULE module, DWORD reason, LPVOID) {
 
     if (!mhs::Cfg().enabled) {
         MHS_LOG_INFO("disabled by config, no hooks installed");
+        return TRUE;
+    }
+    if (AnotherCopyLoaded()) {
+        MHS_LOG_ERROR("another copy of this plugin is already loaded in this process, "
+                      "keep only one .asi and delete the rest");
         return TRUE;
     }
     if (!mhs::game::VersionMatches()) {
