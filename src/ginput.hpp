@@ -35,7 +35,7 @@ struct GeneralSettings {
 };
 #pragma pack(pop)
 
-inline constexpr const char* kModules[]{"GInputSA.asi"};
+inline constexpr const char* kModules[]{"GInputIII.asi", "GInputVC.asi", "GInputSA.asi"};
 
 // which GInput build is loaded, null when none is
 inline const char* LoadedModuleName() {
