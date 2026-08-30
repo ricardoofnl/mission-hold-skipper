@@ -103,6 +103,15 @@ inline bool CutsceneRunning() { return ref<bool>(addr::CCutsceneMgr_ms_running);
 inline bool CutsceneProcessing() { return ref<bool>(addr::CCutsceneMgr_ms_cutsceneProcessing); }
 inline std::uint32_t CutsceneLoadStatus() { return ref<std::uint32_t>(addr::CCutsceneMgr_ms_cutsceneLoadStatus); }
 inline float CutsceneTimer() { return ref<float>(addr::CCutsceneMgr_ms_cutsceneTimer); }
+inline const char* CutsceneName() { return reinterpret_cast<const char*>(addr::CCutsceneMgr_ms_cutsceneName); }
+
+inline constexpr std::int16_t kCamModeFlyBy = 17;
+
+inline std::int16_t ActiveCamMode() {
+    constexpr std::size_t kCamSize = 420;
+    const std::size_t     index    = ref<std::uint8_t>(addr::CCamera_ActiveCam);
+    return ref<std::int16_t>(addr::CCamera_Cams + kCamSize * index);
+}
 
 inline std::uint32_t FrameCounter() { return ref<std::uint32_t>(addr::CTimer_FrameCounter); }
 

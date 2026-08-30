@@ -15,6 +15,11 @@ constexpr ea CCutsceneMgr_ms_running            = 0x95CCF5;
 constexpr ea CCutsceneMgr_ms_cutsceneProcessing = 0x95CD9F;
 constexpr ea CCutsceneMgr_ms_cutsceneLoadStatus = 0x95CB40;
 constexpr ea CCutsceneMgr_ms_cutsceneTimer      = 0x941548;
+constexpr ea CCutsceneMgr_ms_cutsceneName       = 0x70D9D0;
+
+// the skip gate reads the active cam's mode, sizeof(CCam) is 420 on this build
+constexpr ea CCamera_Cams      = 0x6FAEA8;
+constexpr ea CCamera_ActiveCam = 0x6FAD6E;
 
 constexpr ea CHud_Draw          = 0x5052A0;
 constexpr ea CHud_DrawAfterFade = 0x509030;

@@ -1,6 +1,7 @@
 #include "game/iii/backend.hpp"
 
 #include <algorithm>
+#include <cctype>
 #include <cmath>
 #include <cstdint>
 #include <cstring>
@@ -22,13 +23,25 @@ namespace {
 std::uintptr_t g_finishCall{0};
 std::uintptr_t g_hudDrawCall{0};
 std::uintptr_t g_hudDrawOriginal{0};
-bool           g_skipOffered{false};
 
-// vanilla reached its own skip check, so the scene is skippable and a skip key
-// just went down, which is where the hold takes over
+// ms_cutsceneName is a char[8] and the game compares it case insensitively
+bool SameName(const char* name, const char* other) {
+    for (std::size_t i = 0; i < 8; ++i) {
+        const auto a = static_cast<char>(std::tolower(static_cast<unsigned char>(name[i])));
+        const auto b = static_cast<char>(std::tolower(static_cast<unsigned char>(other[i])));
+        if (a != b) {
+            return false;
+        }
+        if (a == '\0') {
+            return true;
+        }
+    }
+    return true;
+}
+
+// vanilla would have skipped instantly here, the hold replaces that
 void __cdecl HookedFinishCutscene() {
-    MHS_LOG_INFO("the game reached its own skip, the hold takes over");
-    g_skipOffered = true;
+    MHS_LOG_DEBUG("swallowed the vanilla skip");
 }
 
 void __cdecl HookedCHudDraw() {
@@ -156,18 +169,23 @@ bool InstallHooks() {
     return true;
 }
 
+// vanilla's own gate, minus its just pressed edge, so the prompt can come up
+// before the player touches anything
 bool SkipAvailable() {
-    if (!CutsceneRunning()) {
-        g_skipOffered = false;
+    if (!CutsceneRunning() || CutsceneLoadStatus() != 0 || ActiveCamMode() != kCamModeFlyBy) {
         return false;
     }
-    MHS_LOG_DEBUG("cutscene running, offered %d, load status %u, timer %.2f",
-                  g_skipOffered ? 1 : 0, CutsceneLoadStatus(), CutsceneTimer());
-    return g_skipOffered;
+    // the ending cutscene is the one scene the game never offers
+    const char* name = CutsceneName();
+    if (SameName(name, "end")) {
+        return false;
+    }
+    MHS_LOG_DEBUG("skip offered, scene '%.8s', load status %u, timer %.2f",
+                  name, CutsceneLoadStatus(), CutsceneTimer());
+    return true;
 }
 
 void PerformSkip() {
-    g_skipOffered = false;
     FinishCutscene();
 }
 
