@@ -48,14 +48,15 @@ Installing
    instead. What matters is that the .asi and the .ini end up in the same folder
    and keep their names, otherwise the plugin runs with its built in defaults.
 
+   Keep only one copy. Some loaders scan the game folder and a "scripts" folder,
+   so the same .asi left in both places loads twice, and the second copy refuses
+   to install and writes that to its log.
+
 3. Start the game and begin any mission that has a cutscene.
 
-4. Hold ENTER. The circle appears and fills up over 1.2 seconds, then the scene
-   is skipped. A single tap does nothing on purpose.
-
-   On GTA III the hold starts on the press that vanilla would have skipped with,
-   so if you were already holding ENTER before the cutscene got to its skippable
-   part, release it once and press again.
+4. Hold ENTER. The circle appears and fills up, then the scene is skipped. A
+   single tap does nothing on purpose. The hold is 1.2 seconds on San Andreas and
+   0.6 seconds on GTA III, where cutscenes are often only a few seconds long.
 
 
 Checking that it loaded
@@ -82,7 +83,8 @@ Changing the settings
 Open the .ini for your game in any text editor. The values are read once when
 the game starts, so restart the game after editing. The most useful ones:
 
-    HoldMs=1200            how long the key has to be held
+    HoldMs=1200            how long the key has to be held, commented out by
+                           default, which means 1200 on SA and 600 on GTA III
     Keys=ENTER,NUMPAD_ENTER,MOUSE_LEFT,PAD_CROSS
     Label=HOLD ENTER TO SKIP
     LabelPad=HOLD TO SKIP        shown while you are on a gamepad
@@ -131,11 +133,15 @@ never writes to the game exe.
 
 Troubleshooting
 
-The prompt never appears.
-   The scene has to be skippable in the first place. San Andreas allows skipping
-   during mission cutscenes and scripted scenes, GTA III only during the flyby
-   part of a cutscene, which is exactly where vanilla would have skipped too.
-   Check the log for "hooks installed".
+The prompt never appears at all.
+   Check the log for "hooks installed". If it says another copy is already
+   loaded, you have the .asi in two places, delete one.
+
+The prompt never appears in some cutscenes but works in others.
+   GTA III only offers a skip while the cutscene camera is in its flyby mode, and
+   never for the ending cutscene. Mission scenes with a static camera have no
+   skip in the game at all, so there is nothing to hold there. With
+   LogLevel=debug the log says when a skip is on offer and for which scene.
 
 The prompt appears but the scene never skips.
    Make sure you keep the key held for the whole duration. Lower HoldMs if

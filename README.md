@@ -49,16 +49,24 @@ A log is written next to the .asi with the same base name. It records the versio
 check, the screen size, and where the prompt was drawn, which is the first place
 to look if something does not appear.
 
+Keep exactly one copy of the .asi. Some loaders scan both the game folder and a
+`scripts` folder, so the same file left in both places loads twice, both copies
+fight over the same patched call sites, and the second one refuses to install and
+says so in its log.
+
 ## Configuration
 
 Every game reads its own ini next to its .asi, both under the
 `[MissionHoldSkipper]` section. Values are read once at startup.
 
 - `Enabled`: `0` leaves the game completely untouched.
-- `HoldMs`: how long the key has to be held, in milliseconds. Default `1200`.
+- `HoldMs`: how long the key has to be held, in milliseconds. The shipped ini
+  leaves it commented out, which uses the default for the game, `1200` on San
+  Andreas and `600` on GTA III, where cutscenes are often only a few seconds.
 - `Keys`: any of `ENTER`, `NUMPAD_ENTER`, `SPACE`, `MOUSE_LEFT`, and any of
   `PAD_CROSS`, `PAD_CIRCLE`, `PAD_SQUARE`, `PAD_TRIANGLE`, `PAD_L1`, `PAD_L2`,
-  `PAD_R1`, `PAD_R2`, comma separated.
+  `PAD_R1`, `PAD_R2`, comma separated. On GTA III `ENTER` is the main Return key
+  and `NUMPAD_ENTER` is the one on the keypad.
 - `ShowHintBeforeHold`: `1` shows the prompt as soon as a scene can be skipped,
   `0` only shows it while a key is held.
 - `Label`: the text next to the circle, used for keyboard and mouse. Set it to
@@ -83,7 +91,9 @@ Every game reads its own ini next to its .asi, both under the
 - `ColorBackdrop`, `ColorTrack`, `ColorProgress`: colours as `RRGGBBAA`. The
   backdrop is the black disc, progress is the white fill sweeping around the rim,
   and the track is the unfilled part of the rim, invisible by default.
-- `LogLevel`: `debug`, `info`, `warn` or `error`.
+- `LogLevel`: `debug`, `info`, `warn` or `error`. On `debug` the log gains one
+  line per frame while a cutscene can be skipped, showing which input the plugin
+  sees held and how far the hold got, which is what to attach to a bug report.
 
 ## Gamepad and GInput
 
@@ -152,13 +162,19 @@ scene.
 
 GTA III has no such function and no script side skip point at all. Its only skip
 lives inline in `CCutsceneMgr::Update`, which calls `CCutsceneMgr::FinishCutscene`
-the moment a skip key goes down while the flyby camera runs. So that call is
-repointed: when the game reaches it we do not end the cutscene, we take it as the
-signal that a skip is being offered and start the hold, then call the real
-`FinishCutscene` once the ring fills. One consequence worth knowing: the trigger
-is vanilla's own just pressed check, so if you were already holding the key
-before the scene became skippable, the hold starts only after you release and
-press again.
+the moment a skip key goes down. That call is repointed so the instant skip never
+happens, and the plugin decides for itself when a skip is on offer by reading the
+same four conditions the game checks: a cutscene is running, its name is not
+`end`, the active camera is in flyby mode, and the cutscene load sequence has
+finished. That means the prompt can appear before any key is touched, and a key
+that was already held still counts. When the hold completes, the real
+`FinishCutscene` runs from the logic phase, through a third repointed call, the
+one to `CCutsceneMgr::Update`, because tearing a scene down in the middle of a
+frame that is being drawn is what the game itself never does.
+
+Mission scenes that keep a static camera never enter flyby mode, so vanilla
+offers no skip there and neither does the plugin. The ending cutscene is excluded
+by name for the same reason.
 
 Drawing happens through the call to `CHud::Draw` inside `Render2dStuff`, which is
 repointed rather than hooked at the callee, so the original function stays
