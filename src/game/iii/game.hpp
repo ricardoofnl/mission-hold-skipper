@@ -3,11 +3,9 @@
 #include <cstddef>
 #include <cstdint>
 
-#include "sa/addresses.hpp"
+#include "game/iii/addresses.hpp"
 
-namespace mhs::sa {
-
-using GxtChar = unsigned char;
+namespace mhs::iii {
 
 template <class T>
 inline T& ref(addr::ea address) {
@@ -45,7 +43,6 @@ static_assert(offsetof(CKeyboardState, extenter) == 0x25A);
 
 #pragma pack(pop)
 
-// stays outside the packed block, the float is aligned to 8 after a pad byte
 struct CMouseControllerState {
     bool  lButton;
     bool  rButton;
@@ -54,25 +51,21 @@ struct CMouseControllerState {
     bool  wheelDown;
     bool  x1Button;
     bool  x2Button;
-    float wheelMoved;
+    char  unused;
     float movedX;
     float movedY;
 };
-static_assert(sizeof(CMouseControllerState) == 0x14);
-static_assert(offsetof(CMouseControllerState, wheelMoved) == 8);
+static_assert(sizeof(CMouseControllerState) == 0x10);
+static_assert(offsetof(CMouseControllerState, movedX) == 8);
 
-// member order is left, top, right, bottom, unlike the original constructor
 struct CRect {
     float left, top, right, bottom;
 };
-static_assert(sizeof(CRect) == 16);
 
 struct CSprite2d {
     void* texture;
 };
-static_assert(sizeof(CSprite2d) == 4);
 
-// keyboard, mouse and pad all end up here, which is why reading it covers GInput
 struct CControllerState {
     std::int16_t LeftStickX, LeftStickY, RightStickX, RightStickY;
     std::int16_t LeftShoulder1, LeftShoulder2, RightShoulder1, RightShoulder2;
@@ -80,79 +73,44 @@ struct CControllerState {
     std::int16_t Start, Select;
     std::int16_t ButtonSquare, ButtonTriangle, ButtonCross, ButtonCircle;
     std::int16_t ShockButtonL, ShockButtonR;
-    std::int16_t chatIndicated, pedWalk, vehicleMouseLook, radioTrackSkip;
+    std::int16_t chatIndicated;
 };
-static_assert(sizeof(CControllerState) == 0x30);
+static_assert(sizeof(CControllerState) == 0x2A);
 static_assert(offsetof(CControllerState, ButtonCross) == 0x20);
 
-// prefix only, the real CPad is 0x134 bytes, so never index this as an array
+// prefix only, III keeps no steering buffer between the states, unlike VC
 struct CPadPrefix {
     CControllerState NewState;
     CControllerState OldState;
-    std::int16_t     SteeringLeftRightBuffer[10];
-    std::int32_t     DrunkDrivingBufferUsed;
     CControllerState PCTempKeyState;
     CControllerState PCTempJoyState;
     CControllerState PCTempMouseState;
 };
-static_assert(offsetof(CPadPrefix, OldState) == 0x30);
-static_assert(offsetof(CPadPrefix, PCTempJoyState) == 0xA8);
+static_assert(offsetof(CPadPrefix, PCTempJoyState) == 0x7E);
 
-struct CRunningScript {
-    CRunningScript* m_pNext;
-    CRunningScript* m_pPrev;
-    char            m_szName[8];
-    std::uint8_t*   m_BaseIP;
-    std::uint8_t*   m_IP;
-    std::uint8_t*   m_IPStack[8];
-    std::uint16_t   m_StackDepth;
-    std::uint32_t   m_LocalVars[34];
-    bool            m_IsActive;
-    bool            m_CondResult;
-    bool            m_UsesMissionCleanup;
-    bool            m_IsExternal;
-    bool            m_IsTextBlockOverride;
-    std::int8_t     m_ExternalType;
-    std::int32_t    m_WakeTime;
-    std::uint16_t   m_AndOrState;
-    bool            m_NotFlag;
-    bool            m_IsDeathArrestCheckEnabled;
-    bool            m_DoneDeathArrest;
-    std::int32_t    m_SceneSkipIP;
-    bool            m_ThisMustBeTheOnlyMissionRunning;
-};
-static_assert(offsetof(CRunningScript, m_StackDepth) == 0x38);
-static_assert(offsetof(CRunningScript, m_UsesMissionCleanup) == 0xC6);
-static_assert(offsetof(CRunningScript, m_WakeTime) == 0xCC);
-static_assert(offsetof(CRunningScript, m_SceneSkipIP) == 0xD8);
-static_assert(offsetof(CRunningScript, m_ThisMustBeTheOnlyMissionRunning) == 0xDC);
-
-enum eFontStyle : std::uint8_t {
-    FONT_GOTHIC,
-    FONT_SUBTITLES,
-    FONT_MENU,
-    FONT_PRICEDOWN,
-};
-
-enum eFontAlignment : std::int8_t {
-    ALIGN_CENTER = 0,
-    ALIGN_LEFT   = 1,
-    ALIGN_RIGHT  = 2,
+enum eFontStyle : std::int16_t {
+    FONT_BANK,
+    FONT_PAGER,
+    FONT_HEADING,
 };
 
 inline CKeyboardState& NewKeyState() { return ref<CKeyboardState>(addr::CPad_NewKeyState); }
 inline CKeyboardState& OldKeyState() { return ref<CKeyboardState>(addr::CPad_OldKeyState); }
-
 inline CMouseControllerState& NewMouseState() { return ref<CMouseControllerState>(addr::CPad_NewMouseState); }
-inline CMouseControllerState& OldMouseState() { return ref<CMouseControllerState>(addr::CPad_OldMouseState); }
-
 inline CPadPrefix& Pad0() { return ref<CPadPrefix>(addr::CPad_Pads); }
 
-inline CRunningScript* ActiveScripts() { return ref<CRunningScript*>(addr::CTheScripts_pActiveScripts); }
+inline bool CutsceneRunning() { return ref<bool>(addr::CCutsceneMgr_ms_running); }
+inline bool CutsceneProcessing() { return ref<bool>(addr::CCutsceneMgr_ms_cutsceneProcessing); }
+inline std::uint32_t CutsceneLoadStatus() { return ref<std::uint32_t>(addr::CCutsceneMgr_ms_cutsceneLoadStatus); }
+inline float CutsceneTimer() { return ref<float>(addr::CCutsceneMgr_ms_cutsceneTimer); }
+inline const char* CutsceneName() { return reinterpret_cast<const char*>(addr::CCutsceneMgr_ms_cutsceneName); }
 
-inline bool CutsceneRunning() {
-    return ref<std::int8_t>(addr::CCutsceneMgr_ms_running) != 0
-        || ref<bool>(addr::CCutsceneMgr_ms_cutsceneProcessing);
+inline constexpr std::int16_t kCamModeFlyBy = 17;
+
+inline std::int16_t ActiveCamMode() {
+    constexpr std::size_t kCamSize = 420;
+    const std::size_t     index    = ref<std::uint8_t>(addr::CCamera_ActiveCam);
+    return ref<std::int16_t>(addr::CCamera_Cams + kCamSize * index);
 }
 
 inline std::uint32_t FrameCounter() { return ref<std::uint32_t>(addr::CTimer_FrameCounter); }
@@ -164,14 +122,34 @@ inline float ScreenHeight() { return static_cast<float>(ref<std::int32_t>(addr::
 inline float ScaleX(float v) { return v * ScreenWidth() / 640.0f; }
 inline float ScaleY(float v) { return v * ScreenHeight() / 448.0f; }
 
-inline bool IsForeground() { return fn<bool(__cdecl*)()>(addr::IsForeground)(); }
-
 inline void CHudDraw() { fn<void(__cdecl*)()>(addr::CHud_Draw)(); }
+inline void CutsceneUpdate() { fn<void(__cdecl*)()>(addr::CCutsceneMgr_Update)(); }
+inline void FinishCutscene() { fn<void(__cdecl*)()>(addr::CCutsceneMgr_FinishCutscene)(); }
 
+// the quad goes into CSprite2d::maVertices, then out as a triangle fan, which is
+// what the SA build gets from CSprite2d::Draw2DPolygon
 inline void Draw2DPolygon(float x1, float y1, float x2, float y2,
                           float x3, float y3, float x4, float y4, const CRGBA& color) {
-    fn<void(__cdecl*)(float, float, float, float, float, float, float, float, const CRGBA&)>(
-        addr::CSprite2d_Draw2DPolygon)(x1, y1, x2, y2, x3, y3, x4, y4, color);
+    fn<void(__cdecl*)(float, float, float, float, float, float, float, float,
+                      const CRGBA&, const CRGBA&, const CRGBA&, const CRGBA&)>(
+        addr::CSprite2d_SetVertices)(x1, y1, x2, y2, x3, y3, x4, y4, color, color, color, color);
+
+    constexpr int kTextureRaster = 1, kZTest = 6, kShadeMode = 7, kZWrite = 8, kVertexAlpha = 12;
+    constexpr int kFlat = 1, kGouraud = 2, kTriFan = 5;
+
+    const auto set = fn<int(__cdecl*)(int, void*)>(addr::RwRenderStateSet);
+    // CHud::Draw leaves ztest and zwrite back on, so bracket the fan the way
+    // CSprite2d::DrawRect does
+    set(kTextureRaster, nullptr);
+    set(kShadeMode, reinterpret_cast<void*>(kFlat));
+    set(kZTest, nullptr);
+    set(kZWrite, nullptr);
+    set(kVertexAlpha, reinterpret_cast<void*>(color.a != 255 ? 1 : 0));
+    fn<int(__cdecl*)(int, void*, int)>(addr::RwIm2DRenderPrimitive)(
+        kTriFan, reinterpret_cast<void*>(addr::CSprite2d_maVertices), 4);
+    set(kZTest, reinterpret_cast<void*>(1));
+    set(kZWrite, reinterpret_cast<void*>(1));
+    set(kShadeMode, reinterpret_cast<void*>(kGouraud));
 }
 
 namespace txd {
@@ -199,24 +177,23 @@ inline void SpriteDraw(CSprite2d& sprite, const CRect& rect, const CRGBA& color)
 
 namespace font {
 inline void SetScale(float w, float h) { fn<void(__cdecl*)(float, float)>(addr::CFont_SetScale)(w, h); }
-inline void SetColor(CRGBA c) { fn<void(__cdecl*)(CRGBA)>(addr::CFont_SetColor)(c); }
-inline void SetFontStyle(eFontStyle s) { fn<void(__cdecl*)(eFontStyle)>(addr::CFont_SetFontStyle)(s); }
+// III takes the colour by reference, SA takes it by value
+inline void SetColor(const CRGBA& c) { fn<void(__cdecl*)(const CRGBA*)>(addr::CFont_SetColor)(&c); }
+inline void SetFontStyle(std::int16_t s) { fn<void(__cdecl*)(std::int16_t)>(addr::CFont_SetFontStyle)(s); }
 inline void SetWrapx(float v) { fn<void(__cdecl*)(float)>(addr::CFont_SetWrapx)(v); }
-inline void SetCentreSize(float v) { fn<void(__cdecl*)(float)>(addr::CFont_SetCentreSize)(v); }
 inline void SetRightJustifyWrap(float v) { fn<void(__cdecl*)(float)>(addr::CFont_SetRightJustifyWrap)(v); }
-inline void SetDropColor(CRGBA c) { fn<void(__cdecl*)(CRGBA)>(addr::CFont_SetDropColor)(c); }
-inline void SetBackground(bool on, bool enlargeBox) {
-    fn<void(__cdecl*)(bool, bool)>(addr::CFont_SetBackground)(on, enlargeBox);
+inline void SetDropColor(const CRGBA& c) { fn<void(__cdecl*)(const CRGBA*)>(addr::CFont_SetDropColor)(&c); }
+inline void SetDropShadowPosition(std::int16_t v) {
+    fn<void(__cdecl*)(std::int16_t)>(addr::CFont_SetDropShadowPosition)(v);
 }
-inline void SetDropShadowPosition(std::int16_t v) { fn<void(__cdecl*)(std::int16_t)>(addr::CFont_SetDropShadowPosition)(v); }
-inline void SetEdge(std::int8_t v) { fn<void(__cdecl*)(std::int8_t)>(addr::CFont_SetEdge)(v); }
-inline void SetProportional(bool on) { fn<void(__cdecl*)(bool)>(addr::CFont_SetProportional)(on); }
-inline void SetJustify(bool on) { fn<void(__cdecl*)(bool)>(addr::CFont_SetJustify)(on); }
-inline void SetOrientation(eFontAlignment a) { fn<void(__cdecl*)(eFontAlignment)>(addr::CFont_SetOrientation)(a); }
-inline void PrintString(float x, float y, const char* text) {
-    fn<void(__cdecl*)(float, float, const GxtChar*)>(addr::CFont_PrintString)(
-        x, y, reinterpret_cast<const GxtChar*>(text));
+inline void SetPropOn() { fn<void(__cdecl*)()>(addr::CFont_SetPropOn)(); }
+inline void SetJustifyOff() { fn<void(__cdecl*)()>(addr::CFont_SetJustifyOff)(); }
+inline void SetRightJustifyOn() { fn<void(__cdecl*)()>(addr::CFont_SetRightJustifyOn)(); }
+inline void SetBackgroundOff() { fn<void(__cdecl*)()>(addr::CFont_SetBackgroundOff)(); }
+// the game nulls a trailing space inside the buffer, so it cannot be const
+inline void PrintString(float x, float y, std::uint16_t* text) {
+    fn<void(__cdecl*)(float, float, std::uint16_t*)>(addr::CFont_PrintString)(x, y, text);
 }
 } // namespace font
 
-} // namespace mhs::sa
+} // namespace mhs::iii

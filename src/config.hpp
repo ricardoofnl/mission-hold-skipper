@@ -3,9 +3,9 @@
 #include <cstdint>
 #include <string>
 
+#include "game/bindings.hpp"
 #include "pad_button.hpp"
 #include "prompt_device.hpp"
-#include "sa/game.hpp"
 
 namespace mhs {
 
@@ -16,7 +16,7 @@ enum class IconStyle { Auto, PlayStation, Xbox };
 struct Config {
     bool enabled{true};
 
-    std::uint32_t holdMs{1200};
+    std::uint32_t holdMs{game::kDefaultHoldMs};
     bool          keyEnter{true};
     bool          keyNumpadEnter{true};
     bool          keySpace{false};
@@ -44,10 +44,12 @@ struct Config {
 
     float labelScaleX{0.28f};
     float labelScaleY{0.7f};
+    // -1 keeps each game's own default font
+    int   fontStyle{-1};
 
-    sa::CRGBA colorBackdrop{0, 0, 0, 200};
-    sa::CRGBA colorTrack{255, 255, 255, 0};
-    sa::CRGBA colorProgress{255, 255, 255, 255};
+    game::CRGBA colorBackdrop{0, 0, 0, 200};
+    game::CRGBA colorTrack{255, 255, 255, 0};
+    game::CRGBA colorProgress{255, 255, 255, 255};
 
     std::string logLevel{"info"};
 };

@@ -40,13 +40,15 @@ jobs:
       - name: check the binary shape
         shell: bash
         run: |
-          dumpbin //headers build/build/Release/MissionHoldSkipper.asi | grep -E "machine|DLL$"
-          dumpbin //dependents build/build/Release/MissionHoldSkipper.asi
+          for asi in MissionHoldSkipper MissionHoldSkipperIII; do
+            dumpbin //headers "build/build/Release/$asi.asi" | grep -E "machine|DLL$"
+            dumpbin //dependents "build/build/Release/$asi.asi"
+          done
 
       - uses: actions/upload-artifact@v4
         with:
           name: MissionHoldSkipper
           path: |
-            build/build/Release/MissionHoldSkipper.asi
-            MissionHoldSkipper.ini
+            build/build/Release/*.asi
+            build/build/Release/*.ini
           if-no-files-found: error

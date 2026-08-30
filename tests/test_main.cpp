@@ -1,8 +1,10 @@
 #include <cmath>
+#include <cstdint>
 #include <cstdio>
 #include <string>
 #include <vector>
 
+#include "game/callscan.hpp"
 #include "hold_state.hpp"
 #include "pad_button.hpp"
 #include "prompt_device.hpp"
@@ -64,6 +66,9 @@ void TestHoldState() {
     Check(!state.ConsumeCompleted(), "no completion while nothing can be skipped");
     Check(state.Progress() == 0.0f, "progress stays empty while unavailable");
 
+    // the first held frame's delta covers time before the press, so it is dropped
+    state.Update(true, true, 400);
+    Check(state.Progress() == 0.0f, "the frame the hold starts credits nothing");
     state.Update(true, true, 400);
     Check(!state.ConsumeCompleted(), "no completion before the hold is long enough");
     Check(std::fabs(state.Progress() - 0.4f) < 0.001f, "progress tracks the held time");
@@ -76,14 +81,19 @@ void TestHoldState() {
     Check(!state.ConsumeCompleted(), "holding on does not fire again");
 
     state.Update(true, false, 16);
-    Check(state.Progress() == 0.0f, "releasing resets progress");
+    Check(state.Progress() > 0.0f, "a short key up keeps the progress");
+    state.Update(true, false, 200);
+    Check(state.Progress() == 0.0f, "a longer key up drops it");
+
+    state.Update(true, true, 16);
     state.Update(true, true, 1500);
     Check(state.ConsumeCompleted(), "a fresh hold can fire again");
 
     mhs::HoldState late;
     late.SetHoldMs(100);
+    late.Update(true, true, 16);
     late.Update(true, true, 200);
-    late.Update(true, false, 16);
+    late.Update(true, false, 500);
     Check(!late.ConsumeCompleted(), "release drops an unconsumed completion");
 }
 
@@ -167,6 +177,34 @@ void TestPadButtons() {
     Check(mhs::FirstPadButton((1u << 3) | (1u << 1)) == 1, "the lowest enabled button wins");
 }
 
+void TestCallScan() {
+    constexpr std::uintptr_t kCode   = 0x404EE0;
+    constexpr std::uintptr_t kCallee = 0x405140;
+
+    // call rel32 at kCode + 3, so rel32 = kCallee - (kCode + 3 + 5) = 0x258
+    std::vector<std::uint8_t> code{0x53, 0x56, 0x8B, 0xE8, 0x58, 0x02, 0x00, 0x00, 0x5E, 0xC3};
+
+    auto found = mhs::callscan::FindCalls(code.data(), code.size(), kCode, kCallee);
+    Check(found.count == 1, "one matching call is found");
+    Check(found.at == kCode + 3, "the call site address is reported");
+
+    found = mhs::callscan::FindCalls(code.data(), code.size(), kCode, 0x400000);
+    Check(found.count == 0, "a call to another callee does not match");
+
+    std::vector<std::uint8_t> twice{0xE8, 0x5B, 0x02, 0x00, 0x00, 0x90,
+                                   0xE8, 0x55, 0x02, 0x00, 0x00, 0xC3};
+    found = mhs::callscan::FindCalls(twice.data(), twice.size(), kCode, kCallee);
+    Check(found.count == 2, "both matching calls are counted");
+    Check(found.at == kCode, "the first match wins");
+
+    std::vector<std::uint8_t> truncated{0x90, 0xE8, 0x58, 0x02};
+    found = mhs::callscan::FindCalls(truncated.data(), truncated.size(), kCode, kCallee);
+    Check(found.count == 0, "a call cut off by the end of the range is ignored");
+
+    found = mhs::callscan::FindCalls(nullptr, 64, kCode, kCallee);
+    Check(found.count == 0, "a null range finds nothing");
+}
+
 } // namespace
 
 int main() {
@@ -176,6 +214,7 @@ int main() {
     TestFadeAnim();
     TestPromptDevice();
     TestPadButtons();
+    TestCallScan();
 
     if (g_failures == 0) {
         std::printf("all checks passed\n");

@@ -29,7 +29,7 @@ bool ParseBool(const std::string& value, bool fallback) {
 }
 
 // RRGGBBAA, alpha optional
-sa::CRGBA ParseColor(const std::string& value, sa::CRGBA fallback) {
+game::CRGBA ParseColor(const std::string& value, game::CRGBA fallback) {
     if (value.size() != 6 && value.size() != 8) {
         return fallback;
     }
@@ -39,11 +39,11 @@ sa::CRGBA ParseColor(const std::string& value, sa::CRGBA fallback) {
         return fallback;
     }
     if (value.size() == 6) {
-        return sa::CRGBA{static_cast<std::uint8_t>((packed >> 16) & 0xFF),
+        return game::CRGBA{static_cast<std::uint8_t>((packed >> 16) & 0xFF),
                          static_cast<std::uint8_t>((packed >> 8) & 0xFF),
                          static_cast<std::uint8_t>(packed & 0xFF), 255};
     }
-    return sa::CRGBA{static_cast<std::uint8_t>((packed >> 24) & 0xFF),
+    return game::CRGBA{static_cast<std::uint8_t>((packed >> 24) & 0xFF),
                      static_cast<std::uint8_t>((packed >> 16) & 0xFF),
                      static_cast<std::uint8_t>((packed >> 8) & 0xFF),
                      static_cast<std::uint8_t>(packed & 0xFF)};
@@ -187,6 +187,7 @@ void LoadConfig(const std::string& iniPath) {
     cfg.iconScale          = number("PadIconScale", cfg.iconScale);
     cfg.labelScaleX        = number("LabelScaleX", cfg.labelScaleX);
     cfg.labelScaleY        = number("LabelScaleY", cfg.labelScaleY);
+    cfg.fontStyle          = static_cast<int>(number("FontStyle", static_cast<float>(cfg.fontStyle)));
     cfg.colorBackdrop      = ParseColor(get("ColorBackdrop"), cfg.colorBackdrop);
     cfg.colorTrack         = ParseColor(get("ColorTrack"), cfg.colorTrack);
     cfg.colorProgress      = ParseColor(get("ColorProgress"), cfg.colorProgress);
