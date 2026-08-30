@@ -99,6 +99,7 @@ void LoadIconOnce() {
     }
 
     const char* path = IconTxdPath();
+    // III's LoadTxd retries RwStreamOpen forever, so a missing file would hang
     if (GetFileAttributesA(path) == INVALID_FILE_ATTRIBUTES) {
         MHS_LOG_INFO("no pad icon txd at %s, the prompt stays text only", path);
         return;

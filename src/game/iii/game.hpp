@@ -124,11 +124,22 @@ inline void Draw2DPolygon(float x1, float y1, float x2, float y2,
                       const CRGBA&, const CRGBA&, const CRGBA&, const CRGBA&)>(
         addr::CSprite2d_SetVertices)(x1, y1, x2, y2, x3, y3, x4, y4, color, color, color, color);
 
-    constexpr int kTextureRaster = 1;
-    constexpr int kTriFan        = 5;
-    fn<int(__cdecl*)(int, void*)>(addr::RwRenderStateSet)(kTextureRaster, nullptr);
+    constexpr int kTextureRaster = 1, kZTest = 6, kShadeMode = 7, kZWrite = 8, kVertexAlpha = 12;
+    constexpr int kFlat = 1, kGouraud = 2, kTriFan = 5;
+
+    const auto set = fn<int(__cdecl*)(int, void*)>(addr::RwRenderStateSet);
+    // CHud::Draw leaves ztest and zwrite back on, so bracket the fan the way
+    // CSprite2d::DrawRect does
+    set(kTextureRaster, nullptr);
+    set(kShadeMode, reinterpret_cast<void*>(kFlat));
+    set(kZTest, nullptr);
+    set(kZWrite, nullptr);
+    set(kVertexAlpha, reinterpret_cast<void*>(color.a != 255 ? 1 : 0));
     fn<int(__cdecl*)(int, void*, int)>(addr::RwIm2DRenderPrimitive)(
         kTriFan, reinterpret_cast<void*>(addr::CSprite2d_maVertices), 4);
+    set(kZTest, reinterpret_cast<void*>(1));
+    set(kZWrite, reinterpret_cast<void*>(1));
+    set(kShadeMode, reinterpret_cast<void*>(kGouraud));
 }
 
 namespace txd {
