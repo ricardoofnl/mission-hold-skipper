@@ -9,13 +9,20 @@ There is one .asi per game, built from the same sources:
 `MissionHoldSkipper.asi` for San Andreas and `MissionHoldSkipperIII.asi` for
 GTA III. Vice City is next and not in this build yet.
 
-## Screenshot
+## Screenshots
 
-![The prompt filling up during a mission cutscene](docs/screenshot.png)
+![The prompt filling up during a San Andreas mission cutscene](docs/screenshot_sa.png)
 
-Mid hold during the Drive-By cutscene, at 1920x1080. The white arc has swept
-about a third of the way around the black circle, and the label sits to its left
-so it stays clear of the subtitles.
+San Andreas, mid hold during the Drive-By cutscene at 1920x1080. The white arc has
+swept part of the way around the black disc, and the label sits to its left so it
+stays clear of the subtitles.
+
+![The same prompt during a GTA III mission cutscene](docs/screenshot_iii.png)
+
+GTA III, the same prompt during Don't Spank Ma Bitch Up, in the game's own heading
+font. It lands inside the cinematic band here, so the black disc disappears into
+it and only the arc and the label show. Set `RingY` if you would rather have the
+prompt over the picture.
 
 ## Requirements
 
