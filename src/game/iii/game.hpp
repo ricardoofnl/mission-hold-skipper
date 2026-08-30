@@ -156,11 +156,12 @@ inline void SpriteDraw(CSprite2d& sprite, const CRect& rect, const CRGBA& color)
 
 namespace font {
 inline void SetScale(float w, float h) { fn<void(__cdecl*)(float, float)>(addr::CFont_SetScale)(w, h); }
-inline void SetColor(CRGBA c) { fn<void(__cdecl*)(CRGBA)>(addr::CFont_SetColor)(c); }
+// III takes the colour by reference, SA takes it by value
+inline void SetColor(const CRGBA& c) { fn<void(__cdecl*)(const CRGBA*)>(addr::CFont_SetColor)(&c); }
 inline void SetFontStyle(std::int16_t s) { fn<void(__cdecl*)(std::int16_t)>(addr::CFont_SetFontStyle)(s); }
 inline void SetWrapx(float v) { fn<void(__cdecl*)(float)>(addr::CFont_SetWrapx)(v); }
 inline void SetRightJustifyWrap(float v) { fn<void(__cdecl*)(float)>(addr::CFont_SetRightJustifyWrap)(v); }
-inline void SetDropColor(CRGBA c) { fn<void(__cdecl*)(CRGBA)>(addr::CFont_SetDropColor)(c); }
+inline void SetDropColor(const CRGBA& c) { fn<void(__cdecl*)(const CRGBA*)>(addr::CFont_SetDropColor)(&c); }
 inline void SetDropShadowPosition(std::int16_t v) {
     fn<void(__cdecl*)(std::int16_t)>(addr::CFont_SetDropShadowPosition)(v);
 }
