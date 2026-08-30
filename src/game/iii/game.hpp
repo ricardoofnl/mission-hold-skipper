@@ -123,6 +123,7 @@ inline float ScaleX(float v) { return v * ScreenWidth() / 640.0f; }
 inline float ScaleY(float v) { return v * ScreenHeight() / 448.0f; }
 
 inline void CHudDraw() { fn<void(__cdecl*)()>(addr::CHud_Draw)(); }
+inline void CutsceneUpdate() { fn<void(__cdecl*)()>(addr::CCutsceneMgr_Update)(); }
 inline void FinishCutscene() { fn<void(__cdecl*)()>(addr::CCutsceneMgr_FinishCutscene)(); }
 
 // the quad goes into CSprite2d::maVertices, then out as a triangle fan, which is

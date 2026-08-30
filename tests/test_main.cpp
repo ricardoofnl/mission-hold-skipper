@@ -66,6 +66,9 @@ void TestHoldState() {
     Check(!state.ConsumeCompleted(), "no completion while nothing can be skipped");
     Check(state.Progress() == 0.0f, "progress stays empty while unavailable");
 
+    // the first held frame's delta covers time before the press, so it is dropped
+    state.Update(true, true, 400);
+    Check(state.Progress() == 0.0f, "the frame the hold starts credits nothing");
     state.Update(true, true, 400);
     Check(!state.ConsumeCompleted(), "no completion before the hold is long enough");
     Check(std::fabs(state.Progress() - 0.4f) < 0.001f, "progress tracks the held time");
@@ -78,14 +81,19 @@ void TestHoldState() {
     Check(!state.ConsumeCompleted(), "holding on does not fire again");
 
     state.Update(true, false, 16);
-    Check(state.Progress() == 0.0f, "releasing resets progress");
+    Check(state.Progress() > 0.0f, "a short key up keeps the progress");
+    state.Update(true, false, 200);
+    Check(state.Progress() == 0.0f, "a longer key up drops it");
+
+    state.Update(true, true, 16);
     state.Update(true, true, 1500);
     Check(state.ConsumeCompleted(), "a fresh hold can fire again");
 
     mhs::HoldState late;
     late.SetHoldMs(100);
+    late.Update(true, true, 16);
     late.Update(true, true, 200);
-    late.Update(true, false, 16);
+    late.Update(true, false, 500);
     Check(!late.ConsumeCompleted(), "release drops an unconsumed completion");
 }
 

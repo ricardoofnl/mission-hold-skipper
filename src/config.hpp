@@ -16,7 +16,7 @@ enum class IconStyle { Auto, PlayStation, Xbox };
 struct Config {
     bool enabled{true};
 
-    std::uint32_t holdMs{1200};
+    std::uint32_t holdMs{game::kDefaultHoldMs};
     bool          keyEnter{true};
     bool          keyNumpadEnter{true};
     bool          keySpace{false};

@@ -9,6 +9,7 @@ namespace mhs::sa {
 
 inline constexpr const char* kGameName = "GTA SA";
 inline constexpr const char* kGameVersion = "1.0 US";
+inline constexpr std::uint32_t kDefaultHoldMs = 1200;
 
 bool VersionMatches();
 bool InstallHooks();

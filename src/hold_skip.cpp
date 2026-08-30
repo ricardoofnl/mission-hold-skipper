@@ -153,12 +153,16 @@ void TickOncePerFrame() {
     }
     lastFrame = frame;
 
-    const auto now = GetTickCount64();
-    // a loading stall must not silently fill the whole ring
-    const auto delta = lastTick == 0
-                           ? 0u
-                           : static_cast<std::uint32_t>(std::min<std::uint64_t>(now - lastTick, 250));
-    lastTick = now;
+    const auto now     = GetTickCount64();
+    const auto elapsed = lastTick == 0 ? 0ull : now - lastTick;
+    lastTick           = now;
+
+    // a load, a pause or a stall is not held time, it throws the hold away
+    const bool stalled = elapsed > 250;
+    const auto delta   = stalled ? 0u : static_cast<std::uint32_t>(elapsed);
+    if (stalled) {
+        g_state.Interrupt();
+    }
 
     const auto& cfg = Cfg();
     g_state.SetHoldMs(cfg.holdMs);

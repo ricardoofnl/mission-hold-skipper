@@ -23,6 +23,9 @@ namespace {
 std::uintptr_t g_finishCall{0};
 std::uintptr_t g_hudDrawCall{0};
 std::uintptr_t g_hudDrawOriginal{0};
+std::uintptr_t g_updateCall{0};
+bool           g_skipPending{false};
+bool           g_promptDead{false};
 
 // ms_cutsceneName is a char[8] and the game compares it case insensitively
 bool SameName(const char* name, const char* other) {
@@ -44,6 +47,29 @@ void __cdecl HookedFinishCutscene() {
     MHS_LOG_DEBUG("swallowed the vanilla skip");
 }
 
+// the real finish tears the scene down and kicks streaming, which belongs in the
+// logic phase, not in the middle of a frame being drawn
+void __cdecl HookedCutsceneUpdate() {
+    CutsceneUpdate();
+    if (g_skipPending) {
+        g_skipPending = false;
+        MHS_LOG_INFO("hold complete, finishing the cutscene");
+        FinishCutscene();
+    }
+}
+
+// a fault in our own drawing must not unwind through Render2dStuff, that leaves
+// the camera begun and the game never renders again
+bool TickAndDraw() {
+    __try {
+        hold_skip::TickOncePerFrame();
+        hold_skip::Draw();
+        return true;
+    } __except (EXCEPTION_EXECUTE_HANDLER) {
+        return false;
+    }
+}
+
 void __cdecl HookedCHudDraw() {
     fn<void(__cdecl*)()>(g_hudDrawOriginal)();
 
@@ -57,8 +83,13 @@ void __cdecl HookedCHudDraw() {
         }
     }
 
-    hold_skip::TickOncePerFrame();
-    hold_skip::Draw();
+    if (g_promptDead) {
+        return;
+    }
+    if (!TickAndDraw()) {
+        g_promptDead = true;
+        MHS_LOG_ERROR("the prompt faulted, switching it off for the rest of this session");
+    }
 }
 
 std::size_t FindCall(std::uintptr_t from, std::size_t size, std::uintptr_t callee, std::uintptr_t& out) {
@@ -148,6 +179,12 @@ bool VersionMatches() {
     }
     MHS_LOG_INFO("call to CCutsceneMgr::FinishCutscene sits at 0x%08X", g_finishCall);
 
+    if (FindCall(code, codeSize, addr::CCutsceneMgr_Update, g_updateCall) != 1) {
+        MHS_LOG_ERROR("no single call to CCutsceneMgr::Update, the skip cannot run in the logic phase");
+        return false;
+    }
+    MHS_LOG_INFO("call to CCutsceneMgr::Update sits at 0x%08X", g_updateCall);
+
     return FindDrawCall(code, codeSize);
 }
 
@@ -156,12 +193,17 @@ bool InstallHooks() {
         MHS_LOG_ERROR("failed to redirect the CCutsceneMgr::FinishCutscene call");
         return false;
     }
+    if (!hook::RedirectCall(g_updateCall, &HookedCutsceneUpdate)) {
+        MHS_LOG_ERROR("failed to redirect the CCutsceneMgr::Update call");
+        return false;
+    }
     if (!hook::RedirectCall(g_hudDrawCall, &HookedCHudDraw)) {
         MHS_LOG_ERROR("failed to redirect the hud draw call");
         return false;
     }
-    // another mod can repoint the same two calls, and the last one to load wins
+    // another mod can repoint the same calls, and the last one to load wins
     if (!CallPointsAt(g_finishCall, &HookedFinishCutscene)
+        || !CallPointsAt(g_updateCall, &HookedCutsceneUpdate)
         || !CallPointsAt(g_hudDrawCall, &HookedCHudDraw)) {
         MHS_LOG_WARN("a call site does not point at the plugin, hold to skip is inactive");
         return false;
@@ -186,7 +228,7 @@ bool SkipAvailable() {
 }
 
 void PerformSkip() {
-    FinishCutscene();
+    g_skipPending = true;
 }
 
 // the field re3 calls enter is the one in the keypad block, extenter is the

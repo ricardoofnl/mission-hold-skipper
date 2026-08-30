@@ -7,6 +7,9 @@ namespace mhs {
 
 class HoldState {
 public:
+    // a key up shorter than this does not throw the hold away
+    static constexpr std::uint32_t kReleaseGraceMs = 100;
+
     void SetHoldMs(std::uint32_t ms) { m_holdMs = ms == 0 ? 1 : ms; }
 
     void Update(bool available, bool keyDown, std::uint32_t deltaMs) {
@@ -17,11 +20,19 @@ public:
             return;
         }
         if (!keyDown) {
-            Reset();
+            m_releasedMs += deltaMs;
+            if (m_releasedMs > kReleaseGraceMs) {
+                Reset();
+            }
             return;
         }
 
-        m_heldMs += deltaMs;
+        m_releasedMs = 0;
+        // the first held frame's delta covers time before the press
+        if (m_holding) {
+            m_heldMs += deltaMs;
+        }
+        m_holding = true;
         if (!m_latched && m_heldMs >= m_holdMs) {
             m_completed = true;
             m_latched   = true;
@@ -39,19 +50,26 @@ public:
     }
 
     bool Available() const { return m_available; }
-    bool Holding() const { return m_heldMs > 0; }
+    bool Holding() const { return m_holding; }
+
+    // a load or a pause is not held time
+    void Interrupt() { Reset(); }
 
 private:
     // clears m_completed too, a release must not leave a skip pending
     void Reset() {
-        m_heldMs    = 0;
-        m_latched   = false;
-        m_completed = false;
+        m_heldMs     = 0;
+        m_releasedMs = 0;
+        m_holding    = false;
+        m_latched    = false;
+        m_completed  = false;
     }
 
     std::uint32_t m_holdMs{1200};
     std::uint32_t m_heldMs{0};
+    std::uint32_t m_releasedMs{0};
     bool          m_available{false};
+    bool          m_holding{false};
     bool          m_latched{false};
     bool          m_completed{false};
 };
