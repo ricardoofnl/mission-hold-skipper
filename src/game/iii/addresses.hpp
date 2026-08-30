@@ -14,6 +14,7 @@ constexpr ea CCutsceneMgr_FinishCutscene = 0x405140;
 constexpr ea CCutsceneMgr_ms_running            = 0x95CCF5;
 constexpr ea CCutsceneMgr_ms_cutsceneProcessing = 0x95CD9F;
 constexpr ea CCutsceneMgr_ms_cutsceneLoadStatus = 0x95CB40;
+constexpr ea CCutsceneMgr_ms_cutsceneTimer      = 0x941548;
 
 constexpr ea CHud_Draw          = 0x5052A0;
 constexpr ea CHud_DrawAfterFade = 0x509030;

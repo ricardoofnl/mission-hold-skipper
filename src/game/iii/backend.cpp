@@ -27,6 +27,7 @@ bool           g_skipOffered{false};
 // vanilla reached its own skip check, so the scene is skippable and a skip key
 // just went down, which is where the hold takes over
 void __cdecl HookedFinishCutscene() {
+    MHS_LOG_INFO("the game reached its own skip, the hold takes over");
     g_skipOffered = true;
 }
 
@@ -160,6 +161,8 @@ bool SkipAvailable() {
         g_skipOffered = false;
         return false;
     }
+    MHS_LOG_DEBUG("cutscene running, offered %d, load status %u, timer %.2f",
+                  g_skipOffered ? 1 : 0, CutsceneLoadStatus(), CutsceneTimer());
     return g_skipOffered;
 }
 
@@ -168,8 +171,10 @@ void PerformSkip() {
     FinishCutscene();
 }
 
-bool KeyEnterDown() { return NewKeyState().enter != 0; }
-bool KeyNumpadEnterDown() { return NewKeyState().extenter != 0; }
+// the field re3 calls enter is the one in the keypad block, extenter is the
+// main return key
+bool KeyEnterDown() { return NewKeyState().extenter != 0; }
+bool KeyNumpadEnterDown() { return NewKeyState().enter != 0; }
 bool KeySpaceDown() { return NewKeyState().standardKeys[' '] != 0; }
 bool MouseLeftDown() { return NewMouseState().lButton; }
 

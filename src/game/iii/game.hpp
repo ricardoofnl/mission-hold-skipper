@@ -102,6 +102,7 @@ inline CPadPrefix& Pad0() { return ref<CPadPrefix>(addr::CPad_Pads); }
 inline bool CutsceneRunning() { return ref<bool>(addr::CCutsceneMgr_ms_running); }
 inline bool CutsceneProcessing() { return ref<bool>(addr::CCutsceneMgr_ms_cutsceneProcessing); }
 inline std::uint32_t CutsceneLoadStatus() { return ref<std::uint32_t>(addr::CCutsceneMgr_ms_cutsceneLoadStatus); }
+inline float CutsceneTimer() { return ref<float>(addr::CCutsceneMgr_ms_cutsceneTimer); }
 
 inline std::uint32_t FrameCounter() { return ref<std::uint32_t>(addr::CTimer_FrameCounter); }
 
