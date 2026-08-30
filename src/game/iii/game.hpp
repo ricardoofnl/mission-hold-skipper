@@ -169,8 +169,9 @@ inline void SetPropOn() { fn<void(__cdecl*)()>(addr::CFont_SetPropOn)(); }
 inline void SetJustifyOff() { fn<void(__cdecl*)()>(addr::CFont_SetJustifyOff)(); }
 inline void SetRightJustifyOn() { fn<void(__cdecl*)()>(addr::CFont_SetRightJustifyOn)(); }
 inline void SetBackgroundOff() { fn<void(__cdecl*)()>(addr::CFont_SetBackgroundOff)(); }
-inline void PrintString(float x, float y, const std::uint16_t* text) {
-    fn<void(__cdecl*)(float, float, const std::uint16_t*)>(addr::CFont_PrintString)(x, y, text);
+// the game nulls a trailing space inside the buffer, so it cannot be const
+inline void PrintString(float x, float y, std::uint16_t* text) {
+    fn<void(__cdecl*)(float, float, std::uint16_t*)>(addr::CFont_PrintString)(x, y, text);
 }
 } // namespace font
 

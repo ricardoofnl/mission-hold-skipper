@@ -218,12 +218,15 @@ bool PadActive(bool keyboardActive) {
 
 void DrawLabel(float x, float y, const char* text, CRGBA color, CRGBA drop,
                float scaleX, float scaleY, float wrapAt, int fontStyle) {
-    // III and VC print 16 bit characters, unlike SA
+    // III and VC print 16 bit characters, and the width table indexes on
+    // character minus 32, so anything below a space would read out of bounds
     std::uint16_t wide[96]{};
     std::size_t   length = 0;
-    while (text[length] != '\0' && length + 1 < std::size(wide)) {
-        wide[length] = static_cast<std::uint16_t>(static_cast<unsigned char>(text[length]));
-        ++length;
+    for (std::size_t i = 0; text[i] != '\0' && length + 1 < std::size(wide); ++i) {
+        const auto c = static_cast<unsigned char>(text[i]);
+        if (c >= ' ' && c < 0x7F) {
+            wide[length++] = c;
+        }
     }
 
     font::SetBackgroundOff();
@@ -235,8 +238,9 @@ void DrawLabel(float x, float y, const char* text, CRGBA color, CRGBA drop,
     font::SetRightJustifyWrap(0.0f);
     font::SetWrapx(wrapAt);
     font::SetDropShadowPosition(1);
-    font::SetDropColor(drop);
+    // the drop alpha is scaled from the colour set last, so set the colour first
     font::SetColor(color);
+    font::SetDropColor(drop);
     font::PrintString(x, y, wide);
 }
 
