@@ -145,8 +145,10 @@ void TickOncePerFrame() {
     static std::uint64_t lastTick  = 0;
 
     const auto frame = game::FrameCounter();
-    if (frame == lastFrame) {
-        return;
+    if constexpr (game::kNeedsFrameGuard) {
+        if (frame == lastFrame) {
+            return;
+        }
     }
     lastFrame = frame;
 

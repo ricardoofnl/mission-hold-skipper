@@ -15,6 +15,8 @@ bool InstallHooks();
 
 // SA gates every skip path through one function, so the skip itself needs nothing
 inline constexpr bool kSkipIsExplicit = false;
+// SA ticks from the input hook and from the draw hook, so it needs the frame guard
+inline constexpr bool kNeedsFrameGuard = true;
 bool SkipAvailable();
 inline void PerformSkip() {}
 

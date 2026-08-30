@@ -11,6 +11,8 @@ inline constexpr const char* kGameVersion = "1.0";
 
 // vanilla skips the moment the button goes down, so the skip itself is ours to do
 inline constexpr bool kSkipIsExplicit = true;
+// only the draw hook ticks, and CTimer stops counting while a scene is skipped
+inline constexpr bool kNeedsFrameGuard = false;
 
 bool VersionMatches();
 bool InstallHooks();
